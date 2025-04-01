@@ -1,0 +1,3 @@
+discord
+mysql-connector-python
+watchdog
