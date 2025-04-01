@@ -1,6 +1,7 @@
 import os
 import mysql.connector
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 class DatabaseConnection:
     def connect():
@@ -11,5 +12,8 @@ class DatabaseConnection:
             database=os.getenv("MYSQL_DATABASE")
         )
 
+    def cursor(connection):
+        return connection.cursor(dictionary=True)
+
     def getCurrentTimestamp():
-        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        return datetime.now(ZoneInfo("Asia/Taipei")).strftime('%Y-%m-%d %H:%M:%S')

@@ -28,8 +28,10 @@ async def personal_data(interaction: discord.Interaction,):
     User = UserServiceObject.firstOrCreate(user=interaction.user);
 
     embed = discord.Embed(title="個人資料查詢", description=f"{interaction.user.mention} 您好！\n這是您的個人資料！")
-    embed.add_field(name="錢包餘額", value=f"{User[3]} 元", inline=True)
-    embed.add_field(name="連續簽到連勝", value=f"{User[4]} 日", inline=True)
+    embed.add_field(name="錢包餘額", value=f"{User['balance']} 元", inline=False)
+    embed.add_field(name="連續簽到連勝", value=f"{User['consecutive_checkin_days']} 日", inline=False)
+    await interaction.response.send_message(embed=embed)
+
     await interaction.response.send_message(embed=embed)
 
 client.run(os.getenv("DISCORD_BOT_TOKEN"))
