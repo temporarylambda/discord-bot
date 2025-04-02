@@ -1,7 +1,7 @@
-# from typing import Literal, Union, NamedTuple
-# from enum import Enum
 from Services.UserService import UserService
 from Services.TopicService import TopicService
+from Views.CurrentTopicDropdownView import CurrentTopicDropdownView
+from Services.DatabaseConnection import DatabaseConnection
 import os
 import discord
 from discord import app_commands
@@ -20,7 +20,7 @@ client = MyClient()
 
 @client.event
 async def on_ready():
-    print(f'Logged in as {client.user} (ID: {client.user.id})')
+    print(f'Logged in as {client.user} (ID: {client.user.id}), 本地時間 {DatabaseConnection.getCurrentTimestamp()}')
     print('------')
 
 # 查看目前個人金額與簽到連勝
@@ -75,7 +75,7 @@ async def tasks(interaction: discord.Interaction):
     embedDescription = f"# 簽到任務查詢\n{interaction.user.mention} 您好！\n這是您的簽到任務！"
     for DailyCheckInTopic in DailyCheckInTopics:
         embedDescription += f"\n\n題目：{DailyCheckInTopic['description']}"
-        if int(DailyCheckInTopic['reward']) > 0:
+        if DailyCheckInTopic['reward'] and str(DailyCheckInTopic['reward']).isdigit() and int(DailyCheckInTopic['reward']) > 0:
             embedDescription += f"\n獎勵：{DailyCheckInTopic['reward']} 元"
         
         if DailyCheckInTopic['note'] is not None:
@@ -83,5 +83,21 @@ async def tasks(interaction: discord.Interaction):
 
     embed = discord.Embed(title="簽到任務查詢", description=embedDescription)
     await interaction.response.send_message(embedDescription)
+
+# 呈現下拉選單選擇要回報的任務
+@client.tree.command(name='任務回報', description='完成你的簽到任務來獲得獎勵！')
+async def tasks_report(interaction: discord.Interaction):
+    UserServiceObject = UserService()
+    User = UserServiceObject.firstOrCreate(interaction.user)
+
+    TopicServiceObject = TopicService()
+    DailyCheckInTopics = TopicServiceObject.getCurrentTopics(User['id'])
+    if len(DailyCheckInTopics) == 0:
+        await interaction.response.send_message(f"{interaction.user.mention} 您目前沒有任何簽到任務！")
+        return
+
+    embed = discord.Embed(title="回報任務", description=f"{interaction.user.mention} 您好！\n這是您目前的簽到題目！\n請選擇題目並按下「確認回報」來進行回報！")
+    view = CurrentTopicDropdownView(DailyCheckInTopics)
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 client.run(os.getenv("DISCORD_BOT_TOKEN"))

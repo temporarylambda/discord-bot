@@ -15,5 +15,8 @@ class DatabaseConnection:
     def cursor(connection):
         return connection.cursor(dictionary=True)
 
+    def getCurrentDateTimeObject():
+        return datetime.now(ZoneInfo("Asia/Taipei"))
+
     def getCurrentTimestamp():
-        return datetime.now(ZoneInfo("Asia/Taipei")).strftime('%Y-%m-%d %H:%M:%S')
+        return DatabaseConnection.getCurrentDateTimeObject().strftime('%Y-%m-%d %H:%M:%S')

@@ -4,7 +4,7 @@ class UserService:
         self.UserRepository = UserRepository();
 
     def firstOrCreate(self, user):
-        User = self.UserRepository.find(uuid=user.id, name=user.display_name);
+        User = self.UserRepository.findByUUID(uuid=user.id, name=user.display_name);
         
         if User is None:
             User = self.UserRepository.create(uuid=user.id, name=user.display_name);
