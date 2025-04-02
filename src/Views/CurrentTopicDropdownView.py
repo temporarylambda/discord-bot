@@ -2,6 +2,7 @@ import os
 import discord
 from Services.UserService import UserService
 from Services.TopicService import TopicService
+from Services.TransferService import TransferService
 
 class CurrentTopicDropdown(discord.ui.Select):
     def __init__(self, dataset: list):
@@ -37,6 +38,7 @@ class CurrentTopicDropdownView(discord.ui.View):
         self.dropdown = CurrentTopicDropdown(dataset)
         self.add_item(self.dropdown)  # 將下拉選單添加到 View
 
+    # 回報邏輯
     @discord.ui.button(label="確認回報", style=discord.ButtonStyle.green, disabled=False, row=1)
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if (len(self.dropdown.values) == 0):
@@ -69,12 +71,17 @@ class CurrentTopicDropdownView(discord.ui.View):
         # 簽到
         TopicServiceObject.report(User['id'], selected_values)
 
-        # 計算需要發放多少獎勵金
-        rewardTopics = []
+        # 獎勵金發放
+        reward = 0
+        TransferServiceObject = TransferService()
         for currentTopic in currentTopics:
-            if str(currentTopic['id']) in selected_values:
-                rewardTopics.append(currentTopic)
-        reward = sum(item.get('reward', 0) for item in rewardTopics if item.get('reward') is not None)
-
-        # TODO: 轉帳
+            if (
+                str(currentTopic['id']) in selected_values and 
+                (currentTopic['reward'] and str(currentTopic['reward']).isdigit() and int(currentTopic['reward']) > 0)
+            ):
+                reward += int(currentTopic['reward'])
+                TransferServiceObject.giveCheckInReward(currentTopic['id'], User, int(currentTopic['reward']))
         await interaction.response.send_message(f"{interaction.user.mention} 回報成功囉！\n您的獎勵也已經發放到您的帳戶了，共計 {reward} 元！")
+
+    async def on_timeout(self):
+        await self.message.edit(content="這個選單已經過期了，請重新發起任務回報！", view=None)

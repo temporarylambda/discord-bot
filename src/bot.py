@@ -11,10 +11,12 @@ class MyClient(discord.Client):
     def __init__(self):
         super().__init__(intents=discord.Intents.default())
         self.tree = app_commands.CommandTree(self)
+        self.synced = False
 
     async def setup_hook(self):
-        self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync(guild=MY_GUILD)
+        if (not self.synced):
+            await self.tree.sync()
+            self.synced = True
 
 client = MyClient()
 
@@ -85,6 +87,9 @@ async def tasks(interaction: discord.Interaction):
     await interaction.response.send_message(embedDescription)
 
 # 呈現下拉選單選擇要回報的任務
+""" 
+實際的回報邏輯在 CurrentTopicDropdownView 的 confirm_button 中
+"""
 @client.tree.command(name='任務回報', description='完成你的簽到任務來獲得獎勵！')
 async def tasks_report(interaction: discord.Interaction):
     UserServiceObject = UserService()
@@ -99,5 +104,11 @@ async def tasks_report(interaction: discord.Interaction):
     embed = discord.Embed(title="回報任務", description=f"{interaction.user.mention} 您好！\n這是您目前的簽到題目！\n請選擇題目並按下「確認回報」來進行回報！")
     view = CurrentTopicDropdownView(DailyCheckInTopics)
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+@client.tree.command(name='查看商品', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
+async def shop(interaction: discord.Interaction):
+    embed = discord.Embed(title="商店街", description=f"{interaction.user.mention} 您好！\n這是我們的商店街！\n目前還在建置中，敬請期待！")
+    await interaction.response.send_message(embed=embed)
+
 
 client.run(os.getenv("DISCORD_BOT_TOKEN"))

@@ -1,6 +1,7 @@
 from Services.DatabaseConnection import DatabaseConnection
 from datetime import timedelta
 class UserRepository:
+    # 以 discord uuid 進行查詢, 如果沒有資料則建立一筆新的資料
     def findByUUID(self, uuid, name=None):
         currentTimestamp = DatabaseConnection.getCurrentTimestamp();
         connection = DatabaseConnection.connect();
@@ -19,6 +20,7 @@ class UserRepository:
         
         return result;
 
+    # 以 id 進行查詢
     def findById(self, id):
         connection = DatabaseConnection.connect();
         cursor = DatabaseConnection.cursor(connection);
@@ -27,6 +29,7 @@ class UserRepository:
         result = cursor.fetchone();
         return result;
 
+    # 建立資料
     def create(self, uuid, name, balance=0, consecutive_checkin_days=0):
         currentTimestamp = DatabaseConnection.getCurrentTimestamp();
         connection = DatabaseConnection.connect();
@@ -37,6 +40,7 @@ class UserRepository:
 
         return self.findByUUID(uuid);
 
+    # 簽到用，更新資料
     def checkIn(self, user_id):
         currentDatetimeObject = DatabaseConnection.getCurrentDateTimeObject();
         currentDate = currentDatetimeObject.strftime('%Y-%m-%d');
@@ -56,4 +60,13 @@ class UserRepository:
             """, 
             (yesterday, currentTimestamp, currentTimestamp, user_id, currentDate)
         );
+        connection.commit();
+
+    # 異動金額用
+    def increaseBalance(self, user_id, amount):
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp();
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+        statement = f"UPDATE users SET balance = balance + %s, updated_at = %s WHERE id = %s";
+        cursor.execute(statement, (amount, currentTimestamp, user_id));
         connection.commit();
