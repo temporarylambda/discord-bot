@@ -17,6 +17,7 @@ class Shop(commands.GroupCog):
         print(f" |---- {self.__class__.__name__} 已經載入！")
 
     @app_commands.command(name='查看商品', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
+    @app_commands.describe(member="（選填）只想查看特定成員的商品？可以透過這個選項設定你想只查看誰所上架的商品！")
     async def shop(self, interaction: discord.Interaction, member: discord.Member = None):
         UserServiceObject = UserService()
         
