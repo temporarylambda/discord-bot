@@ -144,8 +144,9 @@ async def shop(interaction: discord.Interaction, member: discord.Member = None):
     await PaginationView(interaction, get_page).navegate()
 
 @client.tree.command(name='購買商品', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
-# @app_commands.describe(merchandise_id="商品 ID")
-async def item(interaction: discord.Interaction, merchandise_id: int):
+@app_commands.describe(merchandise_id="商品 ID")
+@app_commands.describe(quantity="購買數量")
+async def item(interaction: discord.Interaction, merchandise_id: int, quantity: int = 1):
     UserServiceObject = UserService()
     User = UserServiceObject.firstOrCreate(interaction.user)
 
@@ -169,9 +170,11 @@ async def item(interaction: discord.Interaction, merchandise_id: int):
     embed.add_field(name="商品描述", value=f"{Merchandise['description']}", inline=False)
     embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
     embed.add_field(name="商品擁有者", value=Merchandise['user_name'] if Merchandise['user_name'] is not None else "系統", inline=False)
+    embed.add_field(name="購買數量", value=f"{quantity} 個", inline=False)
+    embed.add_field(name="合計總價", value=f"{Merchandise['price'] * quantity} 元", inline=False)
 
     # 加上按鈕
-    BuyMerchandiseViewObject = BuyMerchandiseView(Merchandise)
+    BuyMerchandiseViewObject = BuyMerchandiseView(Merchandise, quantity)
     await interaction.response.send_message(embed=embed, view=BuyMerchandiseViewObject, ephemeral=True)
 
 
