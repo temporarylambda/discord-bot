@@ -17,10 +17,10 @@ class BotReloader(FileSystemEventHandler):
     def restart_bot(self):
         self.bot_process.terminate()  # 結束舊的 Bot
         self.bot_process.wait()
-        self.bot_process = subprocess.Popen(["python", "bot.py"])  # 啟動新的 Bot
+        self.bot_process = subprocess.Popen(["python", "main.py"])  # 啟動新的 Bot
 
 if __name__ == "__main__":
-    bot_process = subprocess.Popen(["python", "bot.py"])
+    bot_process = subprocess.Popen(["python", "main.py"])
     event_handler = BotReloader(bot_process)
     observer = Observer()
     observer.schedule(event_handler, path=".", recursive=True)  # 監聽整個資料夾
