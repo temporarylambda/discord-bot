@@ -1,3 +1,4 @@
+import os
 from Repositories.TransferRecordRepository import TransferRecordRepository 
 from Repositories.TransferReasonRepository import TransferReasonRepository
 from Repositories.UserRepository import UserRepository
@@ -23,6 +24,18 @@ class TransferService:
 
         return;
 
+    # 購買商品
+    def buyMerchandise(self, from_user, to_user, merchandise):
+        amount = int(merchandise['price'])
+        to_user_name = to_user['name'] if to_user is not None else "系統"
+        reason = f"{from_user['name']} 購買商品 ID: {merchandise['id']}, {merchandise['name']} (by {to_user_name})，金額 {amount} 元"
+        reason_id = self.TransferReasonRepository.createMerchandise(reason=reason, item_id=merchandise['id'])
+        
+        trade_rate =  float(os.getenv("RULE_MERCHANDISE_TRADE_FEE", 0.2))
+        trade_fee  = int(amount * trade_rate)
+        self._transfer(reason_id=reason_id, to_user=to_user, amount=amount, fee=trade_fee, from_user=from_user)
+        return;
+
     # private method, 金額異動用
     def _transfer(self, reason_id, to_user, amount: int, fee: int =0, note=None, from_user=None):
         UserRepositoryObject = UserRepository();
@@ -32,10 +45,10 @@ class TransferService:
         
         # 異動扣款對象餘額
         if from_user is not None:
-            UserRepositoryObject.increaseBalance(from_user['id'], amount)
+            UserRepositoryObject.increaseBalance(from_user['id'], -amount)
 
         # 撥款
-        self.TransferRecordRepository.create(reason_id, to_user['id'], amount - fee, note)
+        self.TransferRecordRepository.create(reason_id, to_user['id'] if to_user is not None else None, amount - fee, note)
         
         # 異動撥款對象餘額
         if to_user is not None:

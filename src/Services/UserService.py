@@ -10,3 +10,6 @@ class UserService:
             User = self.UserRepository.create(uuid=user.id, name=user.display_name);
         
         return User;
+
+    def findById(self, id):
+        return self.UserRepository.findById(id);
