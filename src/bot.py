@@ -1,5 +1,6 @@
 from Services.UserService import UserService
 from Services.TopicService import TopicService
+from Services.UserInventoryService import UserInventoryService
 from Services.MerchandiseService import MerchandiseService
 from Views.PaginationView import PaginationView
 from Views.CurrentTopicDropdownView import CurrentTopicDropdownView
@@ -17,8 +18,9 @@ class MyClient(discord.Client):
         self.synced = False
 
     async def setup_hook(self):
+        self.tree.clear_commands(guild=MY_GUILD)
         if (not self.synced):
-            await self.tree.sync()
+            await self.tree.sync(guild=MY_GUILD)
             self.synced = True
 
 client = MyClient()
@@ -143,7 +145,7 @@ async def shop(interaction: discord.Interaction, member: discord.Member = None):
 
     await PaginationView(interaction, get_page).navegate()
 
-@client.tree.command(name='購買商品', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
+@client.tree.command(name='購買商品')
 @app_commands.describe(merchandise_id="商品 ID")
 @app_commands.describe(quantity="購買數量")
 async def item(interaction: discord.Interaction, merchandise_id: int, quantity: int = 1):
@@ -177,5 +179,37 @@ async def item(interaction: discord.Interaction, merchandise_id: int, quantity: 
     BuyMerchandiseViewObject = BuyMerchandiseView(Merchandise, quantity)
     await interaction.response.send_message(embed=embed, view=BuyMerchandiseViewObject, ephemeral=True)
 
+@client.tree.command(name='查看背包', description='查看目前擁有的未兌換商品有哪些！')
+async def inventory(interaction: discord.Interaction):
+    UserServiceObject = UserService()
+    
+    User = UserServiceObject.firstOrCreate(interaction.user)
+    UserId = User['id'] if User is not None else None
+
+    L = 10    # elements per page
+    async def get_page(page: int):
+        UserInventoryServiceObject = UserInventoryService()
+        result = UserInventoryServiceObject.getAll(UserId , page, L)
+        print(result)
+
+        n = PaginationView.compute_total_pages(result['total_count'], L)
+        emb = discord.Embed(title="背包清單", description=f"{interaction.user.mention} 您好！\n這是您目前尚未兌換的商品！\n\n")
+
+        if (len(result['result']) == 0):
+            emb.description += "目前沒有任何商品！\n\n"
+        else:
+            for index, merchandises in enumerate(result['result']):
+
+                emb.description += f"**{index + 1}.** **{merchandises['name']}**"
+                if merchandises["merchant_name"] is not None:
+                    emb.description += f" (By **{merchandises['merchant_name']})**"
+                emb.description += f" - {merchandises['quantity']} 個\n"
+
+        emb.description += "\n"
+        emb.set_author(name=f"Requested by {interaction.user.display_name}")
+        emb.set_footer(text=f"Page {page} from {n}")
+        return emb, n
+
+    await PaginationView(interaction, get_page).navegate()
 
 client.run(os.getenv("DISCORD_BOT_TOKEN"))
