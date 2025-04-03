@@ -2,6 +2,8 @@ import os
 from Repositories.TransferRecordRepository import TransferRecordRepository 
 from Repositories.TransferReasonRepository import TransferReasonRepository
 from Repositories.UserRepository import UserRepository
+from Repositories.UserInventoryRepository import UserInventoryRepository
+from Enums.TransferRelationType import TransferRelationType
 class TransferService:
     def __init__(self):
         self.TransferReasonRepository = TransferReasonRepository();
@@ -18,22 +20,31 @@ class TransferService:
     # 給予簽到獎勵
     def giveCheckInReward(self, daily_check_in_topic_id, to_user, amount, note=None):
         reason = f"{to_user['name']} 簽到獎勵，金額 {amount} 元"
-        transfer_reason_id = self.TransferReasonRepository.createCheckIn(reason=reason, item_id=daily_check_in_topic_id)
+        transfer_reason_id = self.TransferReasonRepository.createCheckIn(reason=reason)
         self._transfer(transfer_reason_id=transfer_reason_id, to_user=to_user, amount=int(amount), fee=0, note=note)
-        return;
-
+        self._relation(transfer_reason_id, TransferRelationType.DAILY_CHECK_IN_TOPIC, [daily_check_in_topic_id])
         return;
 
     # 購買商品
-    def buyMerchandise(self, from_user, to_user, merchandise):
+    def buyMerchandise(self, from_user, to_user, merchandise, quantity=1):
         amount = int(merchandise['price'])
         to_user_name = to_user['name'] if to_user is not None else "系統"
         reason = f"{from_user['name']} 購買商品 ID: {merchandise['id']}, {merchandise['name']} (by {to_user_name})，金額 {amount} 元"
-        transfer_reason_id = self.TransferReasonRepository.createMerchandise(reason=reason, item_id=merchandise['id'])
+        transfer_reason_id = self.TransferReasonRepository.createMerchandise(reason=reason)
         
         trade_rate =  float(os.getenv("RULE_MERCHANDISE_TRADE_FEE", 0.2))
         trade_fee  = int(amount * trade_rate)
         self._transfer(transfer_reason_id=transfer_reason_id, to_user=to_user, amount=amount, fee=trade_fee, from_user=from_user)
+        self._relation(transfer_reason_id, TransferRelationType.MERCHANDISE, [merchandise['id']])
+
+        # 存入商品到使用者的背包
+        inventoryIds = []
+        for i in range(quantity):
+            UserInventoryRepositoryObject = UserInventoryRepository()
+            inventoryIds.append(UserInventoryRepositoryObject.addMerchandise(from_user['id'], merchandise))
+
+        # 建立關聯
+        self._relation(transfer_reason_id, TransferRelationType.USER_INVENTORY, inventoryIds)
         return;
 
     # private method, 金額異動用
@@ -58,4 +69,9 @@ class TransferService:
         if (fee and int(fee) > 0): 
             self.TransferRecordRepository.create(transfer_reason_id, None, fee, note)
 
+        return;
+
+    # private method, 紀錄轉帳關聯
+    def _relation(self, transfer_reason_id, relation_type: TransferRelationType, relation_id: list = []):
+        self.TransferReasonRepository.createRelation(transfer_reason_id, relation_type, relation_id)
         return;

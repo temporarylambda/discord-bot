@@ -47,10 +47,10 @@ async def daily_check_in(interaction: discord.Interaction):
 
     TopicServiceObject = TopicService()
     if TopicServiceObject.isUnavailable(User['id']):
-        await interaction.response.send_message(f"{interaction.user.mention} 您目前沒有額度可以領取新的簽到題目，請先完成手上的題目再來簽到！")
+        await interaction.response.send_message(f"{interaction.user.mention} 您目前沒有額度可以領取新的簽到題目，請先完成手上的題目再來簽到！", ephemeral=True)
         return
     elif TopicServiceObject.isTodayTaken(User['id']):
-        await interaction.response.send_message(f"{interaction.user.mention} 今天您已經領取完所有可以領取的題目了！")
+        await interaction.response.send_message(f"{interaction.user.mention} 今天您已經領取完所有可以領取的題目了！", ephemeral=True)
         return
     
     DailyCheckInTopic = TopicServiceObject.take(User['id'])
@@ -74,7 +74,7 @@ async def tasks(interaction: discord.Interaction):
     TopicServiceObject = TopicService()
     DailyCheckInTopics = TopicServiceObject.getCurrentTopics(User['id'])
     if len(DailyCheckInTopics) == 0:
-        await interaction.response.send_message(f"{interaction.user.mention} 您目前沒有任何簽到任務！")
+        await interaction.response.send_message(f"{interaction.user.mention} 您目前沒有任何簽到任務！", ephemeral=True)
         return
 
     embedDescription = f"# 簽到任務查詢\n{interaction.user.mention} 您好！\n這是您的簽到任務！"

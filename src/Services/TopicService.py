@@ -26,7 +26,7 @@ class TopicService:
     # 隨機取得一條題目，並將該題目登記為待執行
     def take(self, user_id):
         topic = self.TopicRepository.random();
-        self.DailyCheckInTopicRepository.register(user_id, topic[0]);
+        self.DailyCheckInTopicRepository.register(user_id, topic['id']);
         return topic
 
     # 回報一道題目已經完成
