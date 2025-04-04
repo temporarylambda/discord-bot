@@ -106,21 +106,9 @@ class CheckIn(commands.GroupCog):
         # 客製化 Dropdown 下拉選單取得資料
         async def getDataset(self, interaction: discord.Interaction):
             dropdown = None
-            options = []
 
             TopicServiceObject = TopicService()
-            DailyCheckInTopics = TopicServiceObject.getCurrentTopics(self.User['id'])
-            if (len(DailyCheckInTopics) > 0):
-                for index, DailyCheckInTopic in enumerate(DailyCheckInTopics):
-                    description = '';
-                    if (DailyCheckInTopic['reward'] is not None):
-                        description = f"獎勵 {DailyCheckInTopic['reward']} 元"
-                    if (DailyCheckInTopic['note'] is not None):
-                        description += ' | ' if description != '' else ''
-                        description += f"{DailyCheckInTopic['note']}"
-
-                    options.append(discord.SelectOption(label=DailyCheckInTopic['description'], description=description, value=str(DailyCheckInTopic['id'])))
-            
+            options = TopicServiceObject.getCurrentTopicsDropdownOptions(self.User['id'])
             content = "您好！\n這是您目前的簽到題目！\n請選擇題目並按下「確認回報」來進行回報！" if dropdown is not None else "您目前沒有任何簽到任務！"
             return {
                 'content': content,

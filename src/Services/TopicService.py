@@ -1,4 +1,5 @@
 import os
+import discord
 from Repositories.TopicRepository import TopicRepository
 from Repositories.UserRepository import UserRepository
 from Repositories.DailyCheckInTopicRepository import DailyCheckInTopicRepository
@@ -12,7 +13,23 @@ class TopicService:
     # 取得目前尚未結束的報到題目
     def getCurrentTopics(self, user_id, ids: list = []):
         return self.DailyCheckInTopicRepository.getCurrentTopics(user_id, ids);
-    
+
+    # 取得目前尚未結束的報到題目 - 下拉選單用
+    def getCurrentTopicsDropdownOptions(self, user_id, ids: list = []):
+        options = []
+        DailyCheckInTopics = self.DailyCheckInTopicRepository.getCurrentTopics(user_id, ids)
+        if (len(DailyCheckInTopics) > 0):
+            for index, DailyCheckInTopic in enumerate(DailyCheckInTopics):
+                description = '';
+                if (DailyCheckInTopic['reward'] is not None):
+                    description = f"獎勵 {DailyCheckInTopic['reward']} 元"
+                if (DailyCheckInTopic['note'] is not None):
+                    description += ' | ' if description != '' else ''
+                    description += f"{DailyCheckInTopic['note']}"
+                options.append(discord.SelectOption(label=DailyCheckInTopic['description'], description=description, value=str(DailyCheckInTopic['id'])))
+        return options
+
+
     # 檢查目前待完成的簽到題目是否已經滿了
     def isUnavailable(self, user_id):
         limitation = os.getenv("RULE_CHECK_IN_MAX_TIMES");
