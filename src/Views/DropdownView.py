@@ -14,6 +14,8 @@ class DropdownView(discord.ui.View):
         self.ButtonList = ButtonList
         self.ephemeral = ephemeral
 
+        self.timeout = None
+
     async def handler(self):
         interaction = self.interaction
         result = await self.getDatasetCallback(self, self.interaction)
