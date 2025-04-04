@@ -33,13 +33,13 @@ class Personal(commands.GroupCog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="簽到榜", description="列出伺服器內前十名簽到王！")
-    async def richest(self, interaction: discord.Interaction):
+    async def checkInChampions(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         RichestUsers = UserServiceObject.getRichestUsers(10)
 
         embed = discord.Embed(title="簽到榜", description=f"{interaction.user.mention} 您好！\n這是伺服器內前十名簽到王！")
         for index, user in enumerate(RichestUsers):
-            embed.add_field(name=f"**{index + 1}.** {user['name']}", value=f"{user['consecutive_checkin_days']} 連勝", inline=False)
+            embed.add_field(name=f"**{index + 1}.** {user['name']}", value=f"連續簽到 {user['consecutive_checkin_days']} 天", inline=False)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 async def setup(bot):
