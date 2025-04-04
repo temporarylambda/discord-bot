@@ -12,9 +12,9 @@ class TransferService:
 
     # 給予簽到獎勵
     def giveCheckInReward(self, daily_check_in_topic_id, user, amount, note=None):
-        reason = f"{user['name']} 簽到獎勵，金額 {amount} 元"
+        reason = f"{user['name']} 簽到獎勵 (DailyCheckInTopicId: {daily_check_in_topic_id})，金額 {amount} 元"
         transfer_reason_id = self.TransferReasonRepository.createCheckIn(reason=reason)
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=user['id'], amount=int(amount), fee=0, note=note)
+        self._transfer(transfer_reason_id=transfer_reason_id, user_id=user['id'], amount=int(amount), fee=0, note=reason)
         self._relation(transfer_reason_id, TransferRelationType.DAILY_CHECK_IN_TOPIC, [daily_check_in_topic_id])
         return;
 

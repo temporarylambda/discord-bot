@@ -2,15 +2,17 @@ import discord
 from typing import Callable
 
 class DropdownView(discord.ui.View):
-    def __init__(self, bot, interaction: discord.Interaction, User: dict, getDatasetCallback: Callable, ButtonList: list = []):
+    def __init__(self, bot, interaction: discord.Interaction, User: dict, getDatasetCallback: Callable, ButtonList: list = [], ephemeral: bool = True):
         super().__init__()
-        self.interaction = interaction
+        self.content = ""
+        self.dropdown = None
+
         self.bot = bot
+        self.interaction = interaction
         self.User = User
         self.getDatasetCallback = getDatasetCallback
         self.ButtonList = ButtonList
-        self.content = ""
-        self.dropdown = None
+        self.ephemeral = ephemeral
 
     async def handler(self):
         interaction = self.interaction
@@ -23,9 +25,9 @@ class DropdownView(discord.ui.View):
                 self.add_item(button)
         
         if (self.dropdown is None):
-            await interaction.response.send_message(f"{interaction.user.mention} {self.content}", ephemeral=True)
+            await interaction.response.send_message(f"{interaction.user.mention} {self.content}", ephemeral=self.ephemeral)
         else:
-            await interaction.response.send_message(f"{interaction.user.mention} {self.content}", view=self, ephemeral=True)
+            await interaction.response.send_message(f"{interaction.user.mention} {self.content}", view=self, ephemeral=self.ephemeral)
 
     @staticmethod
     def generateDropdown(*args, **kwargs):
