@@ -1,12 +1,22 @@
 import discord
-from discord.ext import commands
+from discord.ext import tasks, commands
 from discord import app_commands
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
 
 from Services.UserService import UserService
 
 class Personal(commands.GroupCog):
+    today    = datetime.now(ZoneInfo("Asia/Taipei")).date()
+    midnightTime = time(hour=0, minute=0, second=0, tzinfo=ZoneInfo("Asia/Taipei"))
+
     def __init__(self, bot):
         self.bot = bot
+
+    @tasks.loop(time=midnightTime)
+    async def resetDailyCheckIn():
+        # TODO
+        print(" |---- 每日重置簽到任務！")
 
     @commands.Cog.listener()
     async def on_ready(self):
