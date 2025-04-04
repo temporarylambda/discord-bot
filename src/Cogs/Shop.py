@@ -108,10 +108,10 @@ class Shop(commands.GroupCog):
                 message += "商品賣出通知\n"
                 message += "=========================================\n"
                 message += f"購買人： {interaction.user.mention}\n"   
-                message += f"商品： {self.Merchandise['name']}\n"
-                message += f"單價： {self.Merchandise['price']} 元\n"
-                message += f"數量： {self.quantity} 個\n"
-                message += f"合計： {self.Merchandise['price'] * self.quantity} 元\n"
+                message += f"商　品： {self.Merchandise['name']}\n"
+                message += f"單　價： {self.Merchandise['price']} 元\n"
+                message += f"數　量： {self.quantity} 個\n"
+                message += f"合　計： {self.Merchandise['price'] * self.quantity} 元\n"
                 message += f"（這筆金額將在對方兌換後，扣除手續費後匯入您的帳戶）"
                 await UserService.sendMessage(
                     bot=interaction.client, 
