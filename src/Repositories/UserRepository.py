@@ -86,3 +86,19 @@ class UserRepository:
         cursor.execute("SELECT * FROM users WHERE consecutive_checkin_days > 0 ORDER BY consecutive_checkin_days DESC LIMIT %s", (limit,));
         result = cursor.fetchall();
         return result;
+
+    @staticmethod
+    def resetDailyCheckIn():
+        currentDatetimeObject = DatabaseConnection.getCurrentDateTimeObject();
+        currentTimestamp = currentDatetimeObject.strftime('%Y-%m-%d %H:%M:%S');
+        yesterday = (currentDatetimeObject - timedelta(days=1)).strftime('%Y-%m-%d');
+
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+
+        # 撈取所有簽到日期不是昨天的使用者，把連續簽到天數重置為 0
+        cursor.execute(
+            "UPDATE users SET consecutive_checkin_days = 0, updated_at = %s WHERE DATE(latest_checkin_at) != %s AND consecutive_checkin_days > 0",
+            (currentTimestamp, yesterday)
+        );
+        connection.commit();

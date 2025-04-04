@@ -16,3 +16,7 @@ class UserService:
 
     def findById(self, id):
         return self.UserRepository.findById(id);
+
+    @staticmethod
+    def resetDailyCheckIn():
+        return UserRepository.resetDailyCheckIn();

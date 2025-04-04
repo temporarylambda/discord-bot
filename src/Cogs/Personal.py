@@ -12,11 +12,17 @@ class Personal(commands.GroupCog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.resetDailyCheckIn.start()
 
+    def cog_unload(self):
+        self.resetDailyCheckIn.stop()
+
+    # 每天 00:00 重置簽到
     @tasks.loop(time=midnightTime)
-    async def resetDailyCheckIn():
-        # TODO
+    async def resetDailyCheckIn(self):
+        UserService.resetDailyCheckIn()
         print(" |---- 每日重置簽到任務！")
+
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -46,8 +52,9 @@ class Personal(commands.GroupCog):
     async def checkInChampions(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         RichestUsers = UserServiceObject.getCheckInChampions(10)
-
-        embed = discord.Embed(title="簽到榜", description=f"{interaction.user.mention} 您好！\n這是伺服器內前十名簽到王！")
+        description = f"{interaction.user.mention} 您好！\n\n"
+        description += "這是伺服器內前十名簽到王！\n\n" if len(RichestUsers) > 0 else "目前伺服器還沒有任何連續簽到的紀錄！"
+        embed = discord.Embed(title="簽到榜", description=description)
         for index, user in enumerate(RichestUsers):
             embed.add_field(name=f"**{index + 1}.** {user['name']}", value=f"連續簽到 {user['consecutive_checkin_days']} 天", inline=False)
         await interaction.response.send_message(embed=embed, ephemeral=True)
