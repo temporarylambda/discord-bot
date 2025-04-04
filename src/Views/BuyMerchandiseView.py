@@ -13,6 +13,9 @@ class BuyMerchandiseView(discord.ui.View):
     async def submit(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         UserServiceObject = UserService()
         FromUser = UserServiceObject.firstOrCreate(interaction.user)
+        if (self.merchandise['user_id'] == FromUser['id']):
+            await interaction.response.edit_message(content=f"{interaction.user.mention} 您無法購買自己的商品！", view=None)
+            return
         if (int(FromUser['balance']) < (int(self.merchandise['price']) * int(self.quantity))):
             await interaction.response.edit_message(content=f"{interaction.user.mention} 您的餘額不足，無法購買此商品！", view=None)
             return

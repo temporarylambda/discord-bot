@@ -34,6 +34,12 @@ class TransferReasonRepository:
     def createMerchandise(self, reason: str):
         return self.create(TransferReasonType.MERCHANDISE, reason)
 
+    def createRedeem(self, reason: str):
+        return self.create(TransferReasonType.REDEEM, reason)
+
+    def createRefund(self, reason: str):
+        return self.create(TransferReasonType.REFUND, reason)
+
     def createRelation(self, transfer_reason_id, relation_type: TransferRelationType, relation_ids: list = []):
         if len(relation_ids) == 0:
             return None
