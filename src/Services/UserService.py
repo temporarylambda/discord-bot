@@ -4,12 +4,15 @@ class UserService:
         self.UserRepository = UserRepository();
 
     def firstOrCreate(self, user):
-        User = self.UserRepository.findByUUID(uuid=user.id, name=user.display_name);
-        
-        if User is None:
-            User = self.UserRepository.create(uuid=user.id, name=user.display_name);
-        
-        return User;
+        User = self.UserRepository.findByUUID(uuid=user.id, name=user.display_name)
+        User = User or self.UserRepository.create(uuid=user.id, name=user.display_name)
+        return User
+
+    def getRichestUsers(self, limit: int = 1):
+        return self.UserRepository.getRichestUsers(limit=limit)
+
+    def getCheckInChampions(self, limit: int = 1):
+        return self.UserRepository.getCheckInChampions(limit=limit)
 
     def findById(self, id):
         return self.UserRepository.findById(id);

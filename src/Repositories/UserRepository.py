@@ -70,3 +70,19 @@ class UserRepository:
         statement = f"UPDATE users SET balance = balance + %s, updated_at = %s WHERE id = %s";
         cursor.execute(statement, (amount, currentTimestamp, user_id));
         connection.commit();
+
+    # 取得伺服器中最有錢的使用者
+    def getRichestUsers(self, limit: int = 1):
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+        cursor.execute("SELECT * FROM users WHERE balance > 0 ORDER BY balance DESC LIMIT %s", (limit,));
+        result = cursor.fetchall();
+        return result;
+
+    # 取得伺服器中連續簽到天數最多的使用者
+    def getCheckInChampions(self, limit: int = 1):
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+        cursor.execute("SELECT * FROM users WHERE consecutive_checkin_days > 0 ORDER BY consecutive_checkin_days DESC LIMIT %s", (limit,));
+        result = cursor.fetchall();
+        return result;
