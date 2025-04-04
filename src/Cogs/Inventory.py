@@ -6,8 +6,11 @@ from Services.UserService import UserService
 from Views.PaginationView import PaginationView
 from Services.UserInventoryService import UserInventoryService
 from Services.TransferService import TransferService
+from Services.TopicService import TopicService
 from Views.DropdownView import DropdownView
+from Enums.MerchandiseSystemType import MerchandiseSystemType
 
+# 兌換商品的按鈕 Callback
 async def redeemCallback(Button: discord.ui.Button, interaction: discord.Interaction):
     Button.disabled = True
     dropdown = Button.view.dropdown
@@ -32,10 +35,53 @@ async def redeemCallback(Button: discord.ui.Button, interaction: discord.Interac
     
     # 無法兌換自己的商品
     elif Inventory['system_type'] is not None:
-        await interaction.response.edit_message(content=f"{interaction.user.mention} 此為特殊用途商品，不需兌換！", view=None)
+        if Inventory['system_type'] == MerchandiseSystemType.SYSTEM_CHECK_IN_REFRESH.value:
+            await topicRefreshMerchandiseRedeemCallback(Button=Button, interaction=interaction, UserInventoryServiceObject=UserInventoryServiceObject, Inventory=Inventory)
+            return
+        else:
+            await interaction.response.edit_message(content=f"{interaction.user.mention} 此為特殊用途商品，不需兌換！", view=None)
+            return
+    else:
+        await normalMerchandiseRedeemCallback(Button=Button, interaction=interaction, UserInventoryServiceObject=UserInventoryServiceObject, Inventory=Inventory)
         return
-    
-    await normalMerchandiseRedeemCallback(Button=Button, interaction=interaction, UserInventoryServiceObject=UserInventoryServiceObject, Inventory=Inventory)
+
+# 任務商品兌換邏輯 - 刷新卷 
+async def topicRefreshMerchandiseRedeemCallback(Button: discord.ui.Button, interaction: discord.Interaction, UserInventoryServiceObject: UserInventoryService, Inventory: dict):
+    TopicServiceObject = TopicService()
+    options = TopicServiceObject.getCurrentTopicsDropdownOptions(Button.view.User['id'])
+    if (len(options) == 0):
+        await interaction.response.edit_message(content=f"{interaction.user.mention} 您目前沒有任何任務可以進行刷新！", view=None)
+        return
+
+    # 生成下拉選單
+    class Dropdown(discord.ui.Select):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        async def callback(self, interaction: discord.Interaction):
+            await interaction.response.defer()
+    Select = Dropdown(placeholder="請選擇您想要刷新的任務！", min_values=1, max_values=1, options=options)
+
+    class RedeemButton(discord.ui.Button):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        async def callback(self, interaction: discord.Interaction):
+            if (len(self.view.dropdown.values) == 0):
+                await interaction.response.edit_message(content=f"{interaction.user.mention} 您沒有選擇任何任務！", view=None)
+                return
+        
+            # TODO: 將該任務的狀態改為 SKIP 並且從 UserInventory 中標記一張任務刷新卷為 REDEEMED（已使用）
+            # 取得使用者選擇的任務 ID
+            dailyCheckInTopicId = self.view.dropdown.values[0]
+            print(dailyCheckInTopicId)
+            await interaction.response.defer()
+    Button = RedeemButton(label="確定刷新", style=discord.ButtonStyle.green, row=1)
+    View = discord.ui.View(timeout=None)
+    View.dropdown = Select
+    View.add_item(Select)
+    View.add_item(Button)
+    await interaction.response.edit_message(content=f"{interaction.user.mention} 請選擇你想刷新的任務！", view=View)
 
 # 通常商品兌換邏輯 - 撥款給上架人並發送私訊給上架人
 async def normalMerchandiseRedeemCallback(Button: discord.ui.Button, interaction: discord.Interaction, UserInventoryServiceObject: UserInventoryService, Inventory: dict):
