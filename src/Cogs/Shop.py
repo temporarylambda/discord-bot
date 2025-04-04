@@ -65,12 +65,12 @@ class Shop(commands.GroupCog):
 
         # 商品不存在
         if Merchandise is None:
-            await interaction.response.send_message(f"{interaction.user.mention} 您查詢的商品不存在！")
+            await interaction.response.send_message(f"{interaction.user.mention} 您查詢的商品不存在！", ephemeral=True)
             return
 
         # 無法購買自己的商品
         if Merchandise['user_id'] == User['id']:
-            await interaction.response.send_message(f"{interaction.user.mention} 您不能購買自己的商品！")
+            await interaction.response.send_message(f"{interaction.user.mention} 您不能購買自己的商品！", ephemeral=True)
             return
 
         embed = discord.Embed(title="商品資訊", description="")

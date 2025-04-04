@@ -60,7 +60,7 @@ class CheckIn(commands.GroupCog):
             if DailyCheckInTopic['note'] is not None:
                 embedDescription += f"\n備註：{DailyCheckInTopic['note']}"
 
-        await interaction.response.send_message(embedDescription)
+        await interaction.response.send_message(embedDescription, ephemeral=True)
 
     # 呈現下拉選單選擇要回報的任務 - 實際的回報邏輯在 CurrentTopicDropdownView 的 confirm_button 中
     @app_commands.command(name='任務回報', description='完成你的簽到任務來獲得獎勵！')
@@ -71,7 +71,7 @@ class CheckIn(commands.GroupCog):
         TopicServiceObject = TopicService()
         DailyCheckInTopics = TopicServiceObject.getCurrentTopics(User['id'])
         if len(DailyCheckInTopics) == 0:
-            await interaction.response.send_message(f"{interaction.user.mention} 您目前沒有任何簽到任務！")
+            await interaction.response.send_message(f"{interaction.user.mention} 您目前沒有任何簽到任務！", ephemeral=True)
             return
 
         embed = discord.Embed(title="回報任務", description=f"{interaction.user.mention} 您好！\n這是您目前的簽到題目！\n請選擇題目並按下「確認回報」來進行回報！")
