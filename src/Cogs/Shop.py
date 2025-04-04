@@ -5,7 +5,7 @@ from discord import app_commands
 from Services.UserService import UserService
 from Services.MerchandiseService import MerchandiseService
 from Views.PaginationView import PaginationView
-from Views.BuyMerchandiseView import BuyMerchandiseView
+from Services.TransferService import TransferService
 
 
 class Shop(commands.GroupCog):
@@ -84,8 +84,58 @@ class Shop(commands.GroupCog):
         embed.add_field(name="合計總價", value=f"{Merchandise['price'] * quantity} 元", inline=False)
 
         # 加上按鈕
-        BuyMerchandiseViewObject = BuyMerchandiseView(Merchandise, quantity)
-        await interaction.response.send_message(embed=embed, view=BuyMerchandiseViewObject, ephemeral=True)
+        class Button(discord.ui.Button):
+            def __init__(self, *args, **kwargs):
+                self.User = kwargs.pop('User')
+                self.Merchandise = kwargs.pop('Merchandise')
+                self.quantity = kwargs.pop('quantity')
+                super().__init__(*args, **kwargs)
+
+            async def callback(self, interaction: discord.Interaction) -> None:
+                if (self.Merchandise['user_id'] == self.User['id']):
+                    await interaction.response.edit_message(content=f"{interaction.user.mention} 您無法購買自己的商品！", view=None)
+                    return
+                if (int(self.User['balance']) < (int(self.Merchandise['price']) * int(self.quantity))):
+                    await interaction.response.edit_message(content=f"{interaction.user.mention} 您的餘額不足，無法購買此商品！", view=None)
+                    return
+
+                UserServiceObject = UserService()
+                ToUser = UserServiceObject.findById(self.Merchandise['user_id'])
+                TransferServiceObject = TransferService()
+                TransferServiceObject.buyMerchandise(self.User, ToUser, self.Merchandise, self.quantity)
+
+                message = "=========================================\n"
+                message += "商品賣出通知\n"
+                message += "=========================================\n"
+                message += f"購買人： {interaction.user.mention}\n"   
+                message += f"商品： {self.Merchandise['name']}\n"
+                message += f"單價： {self.Merchandise['price']} 元\n"
+                message += f"數量： {self.quantity} 個\n"
+                message += f"合計： {self.Merchandise['price'] * self.quantity} 元\n"
+                message += f"（這筆金額將在對方兌換後，扣除手續費後匯入您的帳戶）"
+                await UserService.sendMessage(
+                    bot=interaction.client, 
+                    guildId=interaction.guild.id, 
+                    uuid=self.Merchandise['uuid'], 
+                    message=message
+                )
+
+                self.disabled = True
+                await interaction.response.edit_message(content=f'{interaction.user.mention} 您已購買成功！', view=None)
+
+
+        ButtonObject = Button(
+            label="確定購買", 
+            style=discord.ButtonStyle.green, 
+            disabled=False, 
+            row=1, 
+            Merchandise=Merchandise, 
+            quantity=quantity, 
+            User=User
+        )
+        View = discord.ui.View(timeout=None)
+        View.add_item(ButtonObject)
+        await interaction.response.send_message(embed=embed, view=View, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Shop(bot))

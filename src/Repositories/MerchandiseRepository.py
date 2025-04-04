@@ -5,7 +5,7 @@ class MerchandiseRepository:
         connection = DatabaseConnection.connect();
         cursor = DatabaseConnection.cursor(connection);
 
-        statement = "SELECT merchandises.*, users.name AS user_name FROM merchandises LEFT JOIN users ON users.id = merchandises.user_id WHERE merchandises.id = %s AND deleted_at IS NULL"
+        statement = "SELECT merchandises.*, users.name AS user_name, users.uuid FROM merchandises LEFT JOIN users ON users.id = merchandises.user_id WHERE merchandises.id = %s AND deleted_at IS NULL"
         parameters = (id,);
         cursor.execute(statement, parameters);
         result = cursor.fetchone();
