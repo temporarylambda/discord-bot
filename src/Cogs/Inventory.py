@@ -35,6 +35,10 @@ async def redeemCallback(Button: discord.ui.Button, interaction: discord.Interac
         await interaction.response.edit_message(content=f"{interaction.user.mention} 此為特殊用途商品，不需兌換！", view=None)
         return
     
+    await normalMerchandiseRedeemCallback(Button=Button, interaction=interaction, UserInventoryServiceObject=UserInventoryServiceObject, Inventory=Inventory)
+
+# 通常商品兌換邏輯 - 撥款給上架人並發送私訊給上架人
+async def normalMerchandiseRedeemCallback(Button: discord.ui.Button, interaction: discord.Interaction, UserInventoryServiceObject: UserInventoryService, Inventory: dict):
     # # 撥款給上架人
     TransferServiceObject = TransferService()
     redeemResult = TransferServiceObject.redeemMerchandise(User=Button.view.User, Inventory=Inventory)
@@ -50,15 +54,9 @@ async def redeemCallback(Button: discord.ui.Button, interaction: discord.Interac
     # # 發送 Direct Message 給上架者，告知兌換者的資訊
     merchant_uuid = Inventory['merchant_uuid']
     if merchant_uuid is not None:
-        bot = Button.view.bot
-        guild = bot.get_guild(interaction.guild.id) # 取得伺服器物件
-        user  = guild.get_member(merchant_uuid) or await bot.fetch_user(merchant_uuid) # 從伺服器快取取得使用者物件, 若找不到則從 API 取得
         message = f"{interaction.user.mention} 兌換了您的商品 - {Inventory['name']}，\n原價 {redeemResult['price']} 元，扣除手續費 {redeemResult['fee']} 元後，金額 {redeemResult['final_price']} 元已經轉入您的帳戶！"
-        async def send_message(user, message): # 宣告一個 function 來發送訊息
-            await user.send(message)
-        bot.loop.create_task(send_message(user, message)) # 使用 create_task 來非同步發送訊息
+        await UserService.sendMessage(bot=Button.view.bot, guildId=interaction.guild.id, uuid=merchant_uuid, message=message)
 
-    
     await interaction.response.edit_message(content=f"{interaction.user.mention} 您已成功兌換了 {Inventory['name']}，相關費用已經發放到對方戶頭！", view=None)
 
 class Inventory(commands.GroupCog):
