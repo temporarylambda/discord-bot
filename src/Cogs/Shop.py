@@ -96,7 +96,7 @@ class Shop(commands.GroupCog):
                     await interaction.response.edit_message(content=f"{interaction.user.mention} 您無法購買自己的商品！", view=None)
                     return
                 if (int(self.User['balance']) < (int(self.Merchandise['price']) * int(self.quantity))):
-                    await interaction.response.edit_message(content=f"{interaction.user.mention} 您的餘額不足，無法購買此商品！", view=None)
+                    await interaction.response.edit_message(content=f"{interaction.user.mention} 您的餘額不足，無法購買此商品！", view=None, embed=None)
                     return
 
                 UserServiceObject = UserService()
@@ -104,21 +104,22 @@ class Shop(commands.GroupCog):
                 TransferServiceObject = TransferService()
                 TransferServiceObject.buyMerchandise(self.User, ToUser, self.Merchandise, self.quantity)
 
-                message = "=========================================\n"
-                message += "商品賣出通知\n"
-                message += "=========================================\n"
-                message += f"購買人： {interaction.user.mention}\n"   
-                message += f"商　品： {self.Merchandise['name']}\n"
-                message += f"單　價： {self.Merchandise['price']} 元\n"
-                message += f"數　量： {self.quantity} 個\n"
-                message += f"合　計： {self.Merchandise['price'] * self.quantity} 元\n"
-                message += f"（這筆金額將在對方兌換後，扣除手續費後匯入您的帳戶）"
-                await UserService.sendMessage(
-                    bot=interaction.client, 
-                    guildId=interaction.guild.id, 
-                    uuid=self.Merchandise['uuid'], 
-                    message=message
-                )
+                if (self.Merchandise['uuid'] is not None):
+                    message = "=========================================\n"
+                    message += "商品賣出通知\n"
+                    message += "=========================================\n"
+                    message += f"購買人： {interaction.user.mention}\n"   
+                    message += f"商　品： {self.Merchandise['name']}\n"
+                    message += f"單　價： {self.Merchandise['price']} 元\n"
+                    message += f"數　量： {self.quantity} 個\n"
+                    message += f"合　計： {self.Merchandise['price'] * self.quantity} 元\n"
+                    message += f"（這筆金額將在對方兌換後，扣除手續費後匯入您的帳戶）"
+                    await UserService.sendMessage(
+                        bot=interaction.client, 
+                        guildId=interaction.guild.id, 
+                        uuid=self.Merchandise['uuid'], 
+                        message=message
+                    )
 
                 self.disabled = True
                 await interaction.response.edit_message(content=f'{interaction.user.mention} 您已購買成功！', view=None)
