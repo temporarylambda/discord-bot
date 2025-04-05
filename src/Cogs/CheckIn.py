@@ -39,7 +39,7 @@ async def tasksReportCallback(Button: discord.ui.Button, interaction: discord.In
     reward = 0
     TransferServiceObject = TransferService()
     for currentTopic in currentTopics:
-        if (str(currentTopic['id']) in selected_values and currentTopic['reward'] is not None):
+        if (str(currentTopic['id']) in selected_values and currentTopic['reward'] is not None and int(currentTopic['reward']) > 0):
             reward += int(currentTopic['reward'])
             TransferServiceObject.giveCheckInReward(currentTopic['id'], User, int(currentTopic['reward']))
     
