@@ -35,7 +35,7 @@ class Shop(commands.GroupCog):
             if member is not None:
                 emb.description += f" {member.mention} "
             emb.description += f"目前的商品清單！\n\n"
-
+            emb.description += "====================================\n\n"
             if (len(result['result']) == 0):
                 emb.description += "目前沒有任何商品！\n\n"
             else:
@@ -46,6 +46,11 @@ class Shop(commands.GroupCog):
                     emb.description += f" - {merchandises['price']} 元\n"
 
             emb.description += "\n"
+            emb.description += "====================================\n\n"
+            emb.description += "**使用說明**\n"
+            emb.description += "1. 每個商品名稱前，都有一個商品 ID，例如 `1. 任務刷新卷` 的商品 ID 就是 `1` \n"
+            emb.description += "2. 透過 `\shop 購買商品` 並輸入對應商品 ID 即可查看完整資訊 \n"
+            emb.description += "3. 如果確定要購買，再點下「確認購買」按鈕即可 \n"
             emb.set_author(name=f"Requested by {interaction.user.display_name}")
             emb.set_footer(text=f"Page {page} from {n}")
             return emb, n
