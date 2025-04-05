@@ -156,19 +156,12 @@ class Shop(commands.GroupCog):
 
                 UserServiceObject = UserService()
                 User = UserServiceObject.firstOrCreate(interaction.user)
-                print(User)
                 MerchandiseServiceObject = MerchandiseService()
-                print(MerchandiseServiceObject,{
-                    'name': self.merchandiseName.value,
-                    'description': self.merchandiseDesc.value,
-                    'price': self.merchandisePrice.value
-                })
                 merchandiseId = MerchandiseServiceObject.create(User['id'], {
                     'name': self.merchandiseName.value,
                     'description': self.merchandiseDesc.value,
                     'price': self.merchandisePrice.value
                 })
-                print(merchandiseId)
 
                 embed = discord.Embed(title="商品上架成功", description="")
                 embed.description = f"# 商品快訊\n\n"
@@ -200,7 +193,6 @@ class Shop(commands.GroupCog):
                 super().__init__(*args, **kwargs)
 
             async def callback(self, interaction: discord.Interaction):
-                print(self.view.dropdown.values)
                 if (len(self.view.dropdown.values) == 0):
                     await interaction.response.edit_message(content=f"{interaction.user.mention} 您沒有選擇任何商品！", view=None)
                     return

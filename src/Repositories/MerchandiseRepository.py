@@ -82,7 +82,6 @@ class MerchandiseRepository:
 
     # 下架商品
     def delete(self, ids: list = []):
-        print(ids)
         if len(ids) == 0:
             return 0 # 如果沒有傳入 ids，則不進行任何操作
 
