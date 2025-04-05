@@ -3,11 +3,13 @@ import discord
 from Repositories.TopicRepository import TopicRepository
 from Repositories.UserRepository import UserRepository
 from Repositories.DailyCheckInTopicRepository import DailyCheckInTopicRepository
+from Repositories.UserInventoryRepository import UserInventoryRepository
 
 class TopicService:
     def __init__(self):
         self.DailyCheckInTopicRepository = DailyCheckInTopicRepository();
         self.TopicRepository = TopicRepository();
+        self.UserInventoryRepository = UserInventoryRepository();
         self.limitation = os.getenv("RULE_CHECK_IN_MAX_TIMES");
     
     # 取得目前尚未結束的報到題目
@@ -29,7 +31,6 @@ class TopicService:
                 options.append(discord.SelectOption(label=DailyCheckInTopic['description'], description=description, value=str(DailyCheckInTopic['id'])))
         return options
 
-
     # 檢查目前待完成的簽到題目是否已經滿了
     def isUnavailable(self, user_id):
         limitation = os.getenv("RULE_CHECK_IN_MAX_TIMES");
@@ -47,7 +48,7 @@ class TopicService:
         return topic
 
     # 回報一道題目已經完成
-    def report(self, user_id, daily_check_in_topic_ids: list):
+    def complete(self, user_id, daily_check_in_topic_ids: list):
         if len(daily_check_in_topic_ids) == 0:
             return;
         updatedRowsCount = self.DailyCheckInTopicRepository.complete(user_id, daily_check_in_topic_ids);
@@ -56,7 +57,3 @@ class TopicService:
         UserRepositoryObject = UserRepository();
         UserRepositoryObject.checkIn(user_id);
         return updatedRowsCount;
-
-    # TODO: 跳過一道題目
-    def skip(self, user_id, amount, note=None):
-        return;

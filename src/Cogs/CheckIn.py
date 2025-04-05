@@ -33,7 +33,7 @@ async def tasksReportCallback(Button: discord.ui.Button, interaction: discord.In
     selected_values = list(selected_values)
 
     # 簽到
-    TopicServiceObject.report(User['id'], selected_values)
+    TopicServiceObject.complete(User['id'], selected_values)
 
     # 獎勵金發放
     reward = 0
