@@ -12,8 +12,29 @@ class MerchandiseRepository:
 
         return result;
 
+    def getAll(self, user_id = None):
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+
+        statement = """
+            SELECT 
+                merchandises.*, 
+                users.name AS user_name,
+                users.uuid 
+            FROM merchandises 
+            LEFT JOIN users ON users.id = merchandises.user_id 
+            WHERE deleted_at IS NULL 
+        """
+        if (user_id is not None):
+            statement += "AND merchandises.user_id = %s "
+        parameters = (user_id,) if user_id is not None else ();
+        cursor.execute(statement, parameters);
+        result = cursor.fetchall();
+
+        return result;
+
     # 取得所有商品
-    def getAll(self, user_id, page: int = 1, page_size: int = 10):
+    def getAllPaginates(self, user_id, page: int = 1, page_size: int = 10):
         connection = DatabaseConnection.connect();
         cursor = DatabaseConnection.cursor(connection);
 
@@ -58,3 +79,25 @@ class MerchandiseRepository:
         connection.commit();
 
         return cursor.lastrowid;
+
+    # 下架商品
+    def delete(self, ids: list = []):
+        print(ids)
+        if len(ids) == 0:
+            return 0 # 如果沒有傳入 ids，則不進行任何操作
+
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp()
+
+        placeholders = ', '.join(['%s'] * len(ids))  # 根據 ids 數量產生 %s
+        statement = f"""
+            UPDATE merchandises
+            SET deleted_at = %s
+            WHERE id IN ({placeholders}) AND deleted_at IS NULL
+        """
+        parameters = [currentTimestamp] + ids  # 將 currentTimestamp 與 ids 合併為一個參數列表
+        cursor.execute(statement, parameters)
+        connection.commit()
+
+        return cursor.rowcount
