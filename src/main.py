@@ -11,6 +11,7 @@ bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    print(error)
     if isinstance(error, RoleException):
         await interaction.response.send_message(error.message, ephemeral=True)
 

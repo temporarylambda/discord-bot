@@ -85,8 +85,7 @@ class TransferService:
         };
 
     # 管理方撥款給指定成員
-    def giveMoney(self, AdminUser: dict, User: dict, amount, note=None):
-        print(note)
+    def giveMoney(self, AdminUser, User, amount, note=None):
         reason = note if note is not None else f"{AdminUser['name']} 給予 {User['name']} 金額 {amount} 元"
         transfer_reason_id = self.TransferReasonRepository.createGive(reason=reason)
         self._transfer(transfer_reason_id=transfer_reason_id, user_id=User['id'], amount=int(amount), fee=0, note=reason)
