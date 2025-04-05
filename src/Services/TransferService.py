@@ -42,6 +42,7 @@ class TransferService:
         self._relation(transfer_reason_id, TransferRelationType.INVENTORY, inventoryIds)
         return;
 
+    # 兌換商品 - 如果兌換的商品是任務刷新卷，則需要傳入 dailyCheckInTopicIds, 並將這些題目標記為已跳過
     def redeemMerchandise(self, User, Inventory, dailyCheckInTopicIds: list = []):
         amount = int(Inventory['price'])
         fee = int(amount * float(os.getenv("RULE_MERCHANDISE_TRADE_FEE", 0.2)))
@@ -66,6 +67,22 @@ class TransferService:
             'fee': fee,
             'final_price': amount - fee,
         }
+
+    # 轉帳
+    def transfer(self, FromUser, ToUser, amount):
+        transferFee = os.getenv("RULE_TRANSFER_FEE", 15)
+        reason = f"{FromUser['name']} 轉帳給 {ToUser['name']}，金額 {amount} 元，手續費 {transferFee} 元"
+        transfer_reason_id = self.TransferReasonRepository.createTransfer(reason=reason)
+
+        increaseAmount = int(amount)
+        decreesAmount  = int(amount) + int(transferFee)
+        self._transfer(transfer_reason_id=transfer_reason_id, user_id=FromUser['id'], amount=-decreesAmount, fee=transferFee, note=reason)
+        self._transfer(transfer_reason_id=transfer_reason_id, user_id=ToUser['id'], amount=increaseAmount, note=reason)
+        return {
+            'amount': amount,
+            'fee': transferFee,
+            'final_amount': amount,
+        };
 
     # private method, 金額異動用
     def _transfer(self, transfer_reason_id, user_id, amount: int, fee: int =0, note=None):

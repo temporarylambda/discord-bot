@@ -7,7 +7,6 @@ from Services.MerchandiseService import MerchandiseService
 from Views.PaginationView import PaginationView
 from Services.TransferService import TransferService
 
-
 class Shop(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
@@ -105,9 +104,9 @@ class Shop(commands.GroupCog):
                 TransferServiceObject.buyMerchandise(self.User, ToUser, self.Merchandise, self.quantity)
 
                 if (self.Merchandise['uuid'] is not None):
-                    message = "=========================================\n"
+                    message =  "====================================\n"
                     message += "商品賣出通知\n"
-                    message += "=========================================\n"
+                    message += "====================================\n"
                     message += f"購買人： {interaction.user.mention}\n"   
                     message += f"商　品： {self.Merchandise['name']}\n"
                     message += f"單　價： {self.Merchandise['price']} 元\n"

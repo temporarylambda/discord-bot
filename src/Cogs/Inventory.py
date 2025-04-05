@@ -114,9 +114,9 @@ async def normalMerchandiseRedeemCallback(Button: discord.ui.Button, interaction
     # # 發送 Direct Message 給上架者，告知兌換者的資訊
     merchant_uuid = Inventory['merchant_uuid']
     if merchant_uuid is not None:
-        message = "=========================================\n"
+        message =  "===================================\n"
         message += "商品兌換通知 - 金額已轉入您的帳戶\n"
-        message += "=========================================\n"
+        message += "===================================\n"
         message += f"購買人： {interaction.user.mention}\n"   
         message += f"商　品： {Inventory['name']}\n"
         message += f"單　價： {redeemResult['price']} 元\n"
