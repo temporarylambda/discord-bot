@@ -3,11 +3,14 @@ from Repositories.TransferRecordRepository import TransferRecordRepository
 from Repositories.TransferReasonRepository import TransferReasonRepository
 from Repositories.UserRepository import UserRepository
 from Repositories.UserInventoryRepository import UserInventoryRepository
+from Repositories.DailyCheckInTopicRepository import DailyCheckInTopicRepository
 from Enums.TransferRelationType import TransferRelationType
+from Enums.MerchandiseSystemType import MerchandiseSystemType
 class TransferService:
     def __init__(self):
         self.TransferReasonRepository = TransferReasonRepository();
         self.TransferRecordRepository = TransferRecordRepository();
+        self.DailyCheckInTopicRepository = DailyCheckInTopicRepository();
         self.UserRepository = UserRepository();
 
     # 給予簽到獎勵
@@ -39,7 +42,7 @@ class TransferService:
         self._relation(transfer_reason_id, TransferRelationType.INVENTORY, inventoryIds)
         return;
 
-    def redeemMerchandise(self, User, Inventory):
+    def redeemMerchandise(self, User, Inventory, dailyCheckInTopicIds: list = []):
         amount = int(Inventory['price'])
         fee = int(amount * float(os.getenv("RULE_MERCHANDISE_TRADE_FEE", 0.2)))
 
@@ -48,6 +51,16 @@ class TransferService:
         transfer_reason_id = self.TransferReasonRepository.createRedeem(reason=reason)
         self._transfer(transfer_reason_id=transfer_reason_id, user_id=Inventory['merchant_id'], amount=amount-fee, fee=fee, note=reason)
         self._relation(transfer_reason_id, TransferRelationType.INVENTORY, [Inventory['id']])
+
+        # 任務刷新卷
+        if Inventory['system_type'] == MerchandiseSystemType.SYSTEM_CHECK_IN_REFRESH.value:
+            # 紀錄關聯的 Topic Ids
+            self._relation(transfer_reason_id, TransferRelationType.DAILY_CHECK_IN_TOPIC, dailyCheckInTopicIds)
+
+            # 將這些題目標記為已跳過
+            for daily_check_in_topic_id in dailyCheckInTopicIds:
+                self.DailyCheckInTopicRepository.skip(daily_check_in_topic_id);
+
         return {
             'price': amount,
             'fee': fee,

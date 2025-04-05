@@ -60,14 +60,14 @@ class DailyCheckInTopicRepository:
         return cursor.rowcount
     
     # 跳過簽到題目
-    def skip(self, user_id, topic_id):
+    def skip(self, daily_check_in_topic_id):
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
         
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
         cursor.execute(
-            "UPDATE daily_check_in_topics SET status = %s, updated_at = %s WHERE user_id = %s AND topic_id = %s", 
-            (DailyCheckInTopicStatus.SKIP.value, currentTimestamp, user_id, topic_id)
+            "UPDATE daily_check_in_topics SET status = %s, updated_at = %s WHERE id = %s", 
+            (DailyCheckInTopicStatus.SKIP.value, currentTimestamp, daily_check_in_topic_id)
         )
         connection.commit()
         return cursor.rowcount
