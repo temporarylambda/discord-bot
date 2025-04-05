@@ -84,6 +84,21 @@ class TransferService:
             'final_amount': amount,
         };
 
+    # 管理方撥款給指定成員
+    def giveMoney(self, AdminUser: dict, User: dict, amount, note=None):
+        print(note)
+        reason = note if note is not None else f"{AdminUser['name']} 給予 {User['name']} 金額 {amount} 元"
+        transfer_reason_id = self.TransferReasonRepository.createGive(reason=reason)
+        self._transfer(transfer_reason_id=transfer_reason_id, user_id=User['id'], amount=int(amount), fee=0, note=reason)
+        return;
+
+    # 管理方強制從指定成員扣款
+    def takeMoney(self, AdminUser: dict, User: dict, amount, note=None):
+        reason = note if note is not None else f"{AdminUser['name']} 扣除 {User['name']} 金額 {amount} 元"
+        transfer_reason_id = self.TransferReasonRepository.createTake(reason=reason)
+        self._transfer(transfer_reason_id=transfer_reason_id, user_id=User['id'], amount=-int(amount), fee=0, note=reason)
+        return;
+
     # private method, 金額異動用
     def _transfer(self, transfer_reason_id, user_id, amount: int, fee: int =0, note=None):
         # 轉帳紀錄

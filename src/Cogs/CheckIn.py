@@ -5,9 +5,9 @@ from discord import app_commands
 
 from Services.UserService import UserService
 from Services.TopicService import TopicService
-from Services.UserInventoryService import UserInventoryService
 from Views.DropdownView import DropdownView
 from Services.TransferService import TransferService
+from Services.RoleService import RoleService
 
 async def tasksReportCallback(Button: discord.ui.Button, interaction: discord.Interaction):
     Button.disabled = True
@@ -45,7 +45,6 @@ async def tasksReportCallback(Button: discord.ui.Button, interaction: discord.In
     
     await interaction.response.edit_message(content=f"{interaction.user.mention} 回報成功囉！\n您的獎勵也已經發放到您的帳戶了，共計 {reward} 元！", view=None)
 
-
 class CheckIn(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
@@ -55,6 +54,7 @@ class CheckIn(commands.GroupCog):
         print(f" |---- {self.__class__.__name__} 已經載入！")
 
     @app_commands.command(name='簽到', description='隨機出一則真心話或大挑戰！')
+    @RoleService.checkIsNotBanned()
     async def daily_check_in(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         User = UserServiceObject.firstOrCreate(interaction.user)
@@ -79,6 +79,7 @@ class CheckIn(commands.GroupCog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name='任務', description='查詢目前你的簽到任務')
+    @RoleService.checkIsNotBanned()
     async def tasks(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         User = UserServiceObject.firstOrCreate(interaction.user)
@@ -102,6 +103,7 @@ class CheckIn(commands.GroupCog):
 
     # 呈現下拉選單選擇要回報的任務 - 實際的回報邏輯在 CurrentTopicDropdownView 的 confirm_button 中
     @app_commands.command(name='任務回報', description='完成你的簽到任務來獲得獎勵！')
+    @RoleService.checkIsNotBanned()
     async def tasks_report(self, interaction: discord.Interaction):
         # 客製化 Dropdown 下拉選單取得資料
         async def getDataset(self, interaction: discord.Interaction):

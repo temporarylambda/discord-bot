@@ -1,11 +1,18 @@
 import os
 import discord
 from discord.ext import commands
+from discord import app_commands
 from zoneinfo import ZoneInfo
+from Exceptions.RoleException import RoleException
 import asyncio
 
 # 宣告機器人
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, RoleException):
+        await interaction.response.send_message(error.message, ephemeral=True)
 
 # 宣告連線就緒事件
 @bot.event

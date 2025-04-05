@@ -6,6 +6,7 @@ from Services.UserService import UserService
 from Services.MerchandiseService import MerchandiseService
 from Views.PaginationView import PaginationView
 from Services.TransferService import TransferService
+from Services.RoleService import RoleService
 
 class Shop(commands.GroupCog):
     def __init__(self, bot):
@@ -17,6 +18,7 @@ class Shop(commands.GroupCog):
 
     @app_commands.command(name='查看商品', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
     @app_commands.describe(member="（選填）只想查看特定成員的商品？可以透過這個選項設定你想只查看誰所上架的商品！")
+    @RoleService.checkIsNotBanned()
     async def shop(self, interaction: discord.Interaction, member: discord.Member = None):
         UserServiceObject = UserService()
         
@@ -60,6 +62,7 @@ class Shop(commands.GroupCog):
     @app_commands.command(name='購買商品')
     @app_commands.describe(merchandise_id="商品 ID")
     @app_commands.describe(quantity="購買數量")
+    @RoleService.checkIsNotBanned()
     async def item(self, interaction: discord.Interaction, merchandise_id: int, quantity: int = 1):
         UserServiceObject = UserService()
         User = UserServiceObject.firstOrCreate(interaction.user)
@@ -143,6 +146,7 @@ class Shop(commands.GroupCog):
         await interaction.response.send_message(embed=embed, view=View, ephemeral=True)
 
     @app_commands.command(name='商品上架', description='以你作為販售者，為這個伺服器新增一項新商品！')
+    @RoleService.checkIsNotBanned()
     async def merchandiseAvailable(self, interaction: discord.Interaction):
         class MerchandiseModal(discord.ui.Modal, title="商品上架表格"):
             merchandiseName  = discord.ui.TextInput(label="商品名稱", placeholder="請輸入商品名稱", required=True, min_length=1, max_length=255)
@@ -178,6 +182,7 @@ class Shop(commands.GroupCog):
         await interaction.response.send_modal(MerchandiseModal())
 
     @app_commands.command(name='商品下架', description='下架一則屬於你的商品！')
+    @RoleService.checkIsNotBanned()
     async def merchandiseUnavailable(self, interaction: discord.Interaction):
          # 生成下拉選單
         class Dropdown(discord.ui.Select):

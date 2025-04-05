@@ -2,12 +2,9 @@ import os
 import discord
 from discord.ext import commands
 from discord import app_commands
-
 from Services.UserService import UserService
-from Services.MerchandiseService import MerchandiseService
-from Views.PaginationView import PaginationView
 from Services.TransferService import TransferService
-
+from Services.RoleService import RoleService
 
 class Bank(commands.GroupCog):
     transferFee = os.getenv("RULE_TRANSFER_FEE", 15)
@@ -15,7 +12,6 @@ class Bank(commands.GroupCog):
         self.bot = bot
         self.transferFee = os.getenv("RULE_TRANSFER_FEE", 15)
 
-    
     @commands.Cog.listener()
     async def on_ready(self):
         print(f" |---- {self.__class__.__name__} 已經載入！")
@@ -23,6 +19,7 @@ class Bank(commands.GroupCog):
     @app_commands.command(name='轉帳', description=f'轉帳給指定的成員！（轉帳費 {transferFee} 元）')
     @app_commands.describe(member="把錢給這個人")
     @app_commands.describe(amount="轉帳金額")
+    @RoleService.checkIsNotBanned()
     async def transfer(self, interaction: discord.Interaction, member: discord.Member, amount: int):
         UserServiceObject = UserService()
         FromUser = UserServiceObject.firstOrCreate(interaction.user)

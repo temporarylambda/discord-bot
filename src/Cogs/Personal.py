@@ -3,7 +3,7 @@ from discord.ext import tasks, commands
 from discord import app_commands
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
-
+from Services.RoleService import RoleService
 from Services.UserService import UserService
 
 class Personal(commands.GroupCog):
@@ -23,7 +23,6 @@ class Personal(commands.GroupCog):
         UserService.resetDailyCheckIn()
         print(" |---- 每日重置簽到任務！")
 
-
     @commands.Cog.listener()
     async def on_ready(self):
         print(f" |---- {self.__class__.__name__} 已經載入！")
@@ -39,6 +38,7 @@ class Personal(commands.GroupCog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="富翁榜", description="列出伺服器內前十名大富翁！")
+    @RoleService.checkIsNotBanned()
     async def richest(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         RichestUsers = UserServiceObject.getRichestUsers(10)
@@ -49,6 +49,7 @@ class Personal(commands.GroupCog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="簽到榜", description="列出伺服器內前十名簽到王！")
+    @RoleService.checkIsNotBanned()
     async def checkInChampions(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         RichestUsers = UserServiceObject.getCheckInChampions(10)

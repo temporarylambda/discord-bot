@@ -9,6 +9,7 @@ from Services.TransferService import TransferService
 from Services.TopicService import TopicService
 from Views.DropdownView import DropdownView
 from Enums.MerchandiseSystemType import MerchandiseSystemType
+from Services.RoleService import RoleService
 
 # 兌換商品的按鈕 Callback
 async def redeemCallback(Button: discord.ui.Button, interaction: discord.Interaction):
@@ -134,7 +135,6 @@ class Inventory(commands.GroupCog):
     async def on_ready(self):
         print(f" |---- {self.__class__.__name__} 已經載入！")
 
-
     @app_commands.command(name='查看背包', description='查看目前擁有的未兌換商品有哪些！')
     async def inventory(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
@@ -169,6 +169,7 @@ class Inventory(commands.GroupCog):
         await PaginationView(interaction, get_page).navegate()
 
     @app_commands.command(name='兌換商品', description='兌換背包中的商品！')
+    @RoleService.checkIsNotBanned()
     async def redeem(self, interaction: discord.Interaction):
         # 客製化 Dropdown 下拉選單取得資料
         async def getDataset(self, interaction: discord.Interaction):
