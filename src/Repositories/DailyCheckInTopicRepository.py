@@ -34,8 +34,8 @@ class DailyCheckInTopicRepository:
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
         cursor.execute(
-            "SELECT topic_id FROM daily_check_in_topics WHERE user_id = %s AND DATE(created_at) = CURRENT_DATE", 
-            (user_id,)
+            "SELECT topic_id FROM daily_check_in_topics WHERE user_id = %s AND status = %s AND DATE(created_at) = CURRENT_DATE", 
+            (user_id, DailyCheckInTopicStatus.PENDING.value)
         )
         rows = cursor.fetchall()
         return rows

@@ -38,7 +38,6 @@ class TopicService:
 
     # 檢查今天已經領取的報到題目是否已經滿了
     def isTodayTaken(self, user_id):
-        limitation = os.getenv("RULE_CHECK_IN_MAX_TIMES");
         return len(self.DailyCheckInTopicRepository.getTodayTakenTopics(user_id)) >= int(self.limitation);
 
     # 隨機取得一條題目，並將該題目登記為待執行
