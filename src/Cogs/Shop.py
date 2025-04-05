@@ -42,7 +42,7 @@ class Shop(commands.GroupCog):
                 for merchandises in result['result']:
                     emb.description += f"**{merchandises['id']}.** **{merchandises['name']}**"
                     if merchandises["user_name"] is not None:
-                        emb.description += f" By **{merchandises['user_name']}**"
+                        emb.description += f" By **<@{merchandises['uuid']}>**"
                     emb.description += f" - {merchandises['price']} 元\n"
 
             emb.description += "\n"
@@ -137,5 +137,46 @@ class Shop(commands.GroupCog):
         View.add_item(ButtonObject)
         await interaction.response.send_message(embed=embed, view=View, ephemeral=True)
 
+    @app_commands.command(name='商品上架', description='以你作為販售者，為這個伺服器新增一項新商品！')
+    async def merchandiseAvailable(self, interaction: discord.Interaction):
+        class MerchandiseModal(discord.ui.Modal, title="商品上架表格"):
+            merchandiseName  = discord.ui.TextInput(label="商品名稱", placeholder="請輸入商品名稱", required=True, min_length=1, max_length=255)
+            merchandiseDesc  = discord.ui.TextInput(label="商品描述", placeholder="請輸入商品描述", style = discord.TextStyle.paragraph, required=True, min_length=1, max_length=255)
+            merchandisePrice  = discord.ui.TextInput(label="商品價格", placeholder="請輸入商品價格", required=True)
+
+            async def on_submit(self, interaction: discord.Interaction):
+                if (int(self.merchandisePrice.value) <= 0):
+                    await interaction.response.send_message(f"{interaction.user.mention} 商品價格必須大於 0！", ephemeral=True)
+                    return
+
+                UserServiceObject = UserService()
+                User = UserServiceObject.firstOrCreate(interaction.user)
+                print(User)
+                MerchandiseServiceObject = MerchandiseService()
+                print(MerchandiseServiceObject,{
+                    'name': self.merchandiseName.value,
+                    'description': self.merchandiseDesc.value,
+                    'price': self.merchandisePrice.value
+                })
+                merchandiseId = MerchandiseServiceObject.create(User['id'], {
+                    'name': self.merchandiseName.value,
+                    'description': self.merchandiseDesc.value,
+                    'price': self.merchandisePrice.value
+                })
+                print(merchandiseId)
+
+                embed = discord.Embed(title="商品上架成功", description="")
+                embed.description = f"# 商品快訊\n\n"
+                embed.description += f"{interaction.user.mention} 上架了一則新商品！\n\n"
+                embed.add_field(name="商品 ID", value=merchandiseId, inline=True)
+                embed.add_field(name="商品名稱", value=f"{self.merchandiseName.value}", inline=False)
+                embed.add_field(name="商品描述", value=f"{self.merchandiseDesc.value}", inline=False)
+                embed.add_field(name="商品價格", value=f"{self.merchandisePrice.value} 元", inline=False)
+                embed.add_field(name="商品擁有者", value=interaction.user.mention, inline=False)
+                await interaction.response.send_message(embed=embed, ephemeral=False)
+                await interaction.followup.send(f"{interaction.user.mention} 商品上架成功！", ephemeral=True)
+
+        # # Modal
+        await interaction.response.send_modal(MerchandiseModal())
 async def setup(bot):
     await bot.add_cog(Shop(bot))

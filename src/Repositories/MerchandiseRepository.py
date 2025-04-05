@@ -18,7 +18,16 @@ class MerchandiseRepository:
         cursor = DatabaseConnection.cursor(connection);
 
         startFrom = (page - 1) * page_size
-        statement = "SELECT SQL_CALC_FOUND_ROWS merchandises.*, users.name AS user_name FROM merchandises LEFT JOIN users ON users.id = merchandises.user_id WHERE deleted_at IS NULL "
+        statement = """
+            SELECT 
+                SQL_CALC_FOUND_ROWS 
+                merchandises.*, 
+                users.name AS user_name,
+                users.uuid 
+            FROM merchandises 
+            LEFT JOIN users ON users.id = merchandises.user_id 
+            WHERE deleted_at IS NULL 
+        """
         if (user_id is not None):
             statement += "AND merchandises.user_id = %s "
         statement += "LIMIT %s OFFSET %s"
@@ -36,3 +45,16 @@ class MerchandiseRepository:
             'page_size': page_size,
             'result': result
         }
+
+    # 新增商品
+    def create(self, user_id, merchandise):
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp();
+
+        statement = "INSERT INTO merchandises (user_id, name, description, price, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s)"
+        parameters = (user_id, merchandise['name'], merchandise['description'], merchandise['price'], currentTimestamp, currentTimestamp);
+        cursor.execute(statement, parameters);
+        connection.commit();
+
+        return cursor.lastrowid;
