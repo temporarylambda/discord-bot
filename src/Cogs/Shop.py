@@ -120,7 +120,7 @@ class Shop(commands.GroupCog):
                     message += f"單　價： {self.Merchandise['price']} 元\n"
                     message += f"數　量： {self.quantity} 個\n"
                     message += f"合　計： {self.Merchandise['price'] * self.quantity} 元\n"
-                    message += f"（這筆金額將在對方兌換後，扣除手續費後匯入您的帳戶）"
+                    message += f"-# （這筆金額將在對方兌換後，扣除手續費後匯入您的帳戶）"
                     await UserService.sendMessage(
                         bot=interaction.client, 
                         guildId=interaction.guild.id, 
