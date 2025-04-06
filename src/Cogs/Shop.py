@@ -1,4 +1,5 @@
 import discord
+import os
 from discord.ext import commands
 from discord import app_commands
 
@@ -20,7 +21,7 @@ class Shop(commands.GroupCog):
     @app_commands.describe(member="（選填）只想查看特定成員的商品？可以透過這個選項設定你想只查看誰所上架的商品！")
     @RoleService.checkIsNotBanned()
     async def shop(self, interaction: discord.Interaction, member: discord.Member = None):
-        isShowDescription = True
+        isShowDescription = os.getenv("RULE_SHOP_LIST_SHOW_DESCRIPTION", "False") == "True"
         UserServiceObject = UserService()
         
         User = UserServiceObject.firstOrCreate(member) if member is not None else None
