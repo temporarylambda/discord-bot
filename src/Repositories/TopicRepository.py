@@ -60,3 +60,13 @@ class TopicRepository:
         connection.commit()
 
         return cursor.rowcount
+
+    def findById(self, id: int):
+        if id is None:
+            return None
+
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        cursor.execute("SELECT * FROM topics WHERE id = %s AND deleted_at IS NULL", (id,))
+        row = cursor.fetchone()
+        return row

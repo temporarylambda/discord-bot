@@ -16,10 +16,20 @@ class Shop(commands.GroupCog):
     async def on_ready(self):
         print(f" |---- {self.__class__.__name__} 已經載入！")
 
-    @app_commands.command(name='查看商品', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
-    @app_commands.describe(member="（選填）只想查看特定成員的商品？可以透過這個選項設定你想只查看誰所上架的商品！")
+    @app_commands.command(name='商店街', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
+    @app_commands.describe(
+        member="（選填）只想查看特定成員的商品？可以透過這個選項設定你想只查看誰所上架的商品！",
+        showDescription="（選填）是否顯示商品的描述？",
+    )
+    @app_commands.choices(
+        showDescription=[
+            app_commands.Choice(name="是", value="yes"),
+            app_commands.Choice(name="否", value="no"),
+        ]
+    )
     @RoleService.checkIsNotBanned()
-    async def shop(self, interaction: discord.Interaction, member: discord.Member = None):
+    async def shop(self, interaction: discord.Interaction, member: discord.Member = None, showDescription: app_commands.Choice[str] = None):
+        isShowDescription = True if showDescription is not None and showDescription.value == "yes" else False
         UserServiceObject = UserService()
         
         User = UserServiceObject.firstOrCreate(member) if member is not None else None
@@ -31,24 +41,29 @@ class Shop(commands.GroupCog):
             result = MerchandiseServiceObject.getAllPaginates(UserId , page, L)
 
             n = PaginationView.compute_total_pages(result['total_count'], L)
-            emb = discord.Embed(title="商品清單", description=f"{interaction.user.mention} 您好！\n")
+            emb = discord.Embed(title="商品清單", description=f"{interaction.user.mention} 您好！")
 
             emb.description += f"這是"
             if member is not None:
                 emb.description += f" {member.mention} "
             emb.description += f"目前的商品清單！\n\n"
-            emb.description += "====================================\n\n"
             if (len(result['result']) == 0):
-                emb.description += "目前沒有任何商品！\n\n"
+                emb.description += "# 目前沒有任何商品！\n\n"
             else:
                 for merchandises in result['result']:
-                    emb.description += f"**{merchandises['id']}.** **{merchandises['name']}**"
+                    emb.description += f"**{merchandises['id']}.** **{merchandises['name']}** — 售價 **{merchandises['price']}** 元\n"
                     if merchandises["user_name"] is not None:
-                        emb.description += f" By **<@{merchandises['uuid']}>**"
-                    emb.description += f" - {merchandises['price']} 元\n"
+                        emb.description += f"-# 由 **<@{merchandises['uuid']}>** 上架\n"
 
-            emb.description += "\n"
-            emb.description += "====================================\n\n"
+                    # 如果要顯示概述
+                    if isShowDescription and merchandises['description'] is not None:
+                        description_lines = ['> ' + str(descriptionLine) for descriptionLine in merchandises['description'].split("\n")]
+                        emb.description += '\n'.join(description_lines)
+                        emb.description += "\n"
+
+                    emb.description += "\n"
+
+
             emb.description += "**使用說明**\n"
             emb.description += "1. 每個商品名稱前，都有一個商品 ID，例如 `1. 任務刷新卷` 的商品 ID 就是 `1` \n"
             emb.description += "2. 透過 `\shop 購買商品` 並輸入對應商品 ID 即可查看完整資訊 \n"
@@ -150,8 +165,8 @@ class Shop(commands.GroupCog):
     async def merchandiseAvailable(self, interaction: discord.Interaction):
         class MerchandiseModal(discord.ui.Modal, title="商品上架表格"):
             merchandiseName  = discord.ui.TextInput(label="商品名稱", placeholder="請輸入商品名稱", required=True, min_length=1, max_length=255)
-            merchandiseDesc  = discord.ui.TextInput(label="商品描述", placeholder="請輸入商品描述", style = discord.TextStyle.paragraph, required=True, min_length=1, max_length=255)
             merchandisePrice  = discord.ui.TextInput(label="商品價格", placeholder="請輸入商品價格", required=True)
+            merchandiseDesc  = discord.ui.TextInput(label="商品描述", placeholder="請輸入商品描述", style = discord.TextStyle.paragraph,  min_length=1, max_length=255, required=False)
 
             async def on_submit(self, interaction: discord.Interaction):
                 if (self.merchandisePrice.value.isnumeric() == False):
@@ -160,12 +175,14 @@ class Shop(commands.GroupCog):
                 if (int(self.merchandisePrice.value) <= 0):
                     await interaction.response.send_message(f"{interaction.user.mention} 商品價格必須大於 0！", ephemeral=True)
                     return
+                
+                description = self.merchandiseDesc.value if (self.merchandiseDesc.value != "" and self.merchandiseDesc.value is not None) else None
                 UserServiceObject = UserService()
                 User = UserServiceObject.firstOrCreate(interaction.user)
                 MerchandiseServiceObject = MerchandiseService()
                 merchandiseId = MerchandiseServiceObject.create(User['id'], {
                     'name': self.merchandiseName.value,
-                    'description': self.merchandiseDesc.value,
+                    'description': description,
                     'price': self.merchandisePrice.value
                 })
 
@@ -174,7 +191,7 @@ class Shop(commands.GroupCog):
                 embed.description += f"{interaction.user.mention} 上架了一則新商品！\n\n"
                 embed.add_field(name="商品 ID", value=merchandiseId, inline=True)
                 embed.add_field(name="商品名稱", value=f"{self.merchandiseName.value}", inline=False)
-                embed.add_field(name="商品描述", value=f"{self.merchandiseDesc.value}", inline=False)
+                embed.add_field(name="商品描述", value=description if description is not None else "無", inline=False)
                 embed.add_field(name="商品價格", value=f"{self.merchandisePrice.value} 元", inline=False)
                 embed.add_field(name="商品擁有者", value=interaction.user.mention, inline=False)
                 await interaction.response.send_message(embed=embed, ephemeral=False)
@@ -228,7 +245,7 @@ class Shop(commands.GroupCog):
         embed.description += "-# 若確定要下架這個商品，\n-# 請點選「確認下架」按鈕。\n\n\n"
         embed.add_field(name="商品 ID", value=merchandise_id, inline=False)
         embed.add_field(name="商品名稱", value=f"{Merchandise['name']}", inline=False)
-        embed.add_field(name="商品描述", value=f"{Merchandise['description']}", inline=False)
+        embed.add_field(name="商品描述", value=Merchandise['description'] if Merchandise['description'] is not None else "無", inline=False)
         embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
         embed.add_field(name="商品擁有者", value=interaction.user.mention, inline=False)
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)

@@ -65,3 +65,6 @@ class TopicService:
 
     def delete(self, ids: list = []):
         return self.TopicRepository.delete(ids=ids);
+
+    def findById(self, id: int):
+        return self.TopicRepository.findById(id=id);
