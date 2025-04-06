@@ -9,7 +9,7 @@ class PaginationView(discord.ui.View):
         self.index = 1
         super().__init__()
 
-    async def navegate(self):
+    async def navigate(self):
         emb, self.total_pages = await self.get_page(self, self.index)
 
         if self.total_pages <= 1:

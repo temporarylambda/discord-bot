@@ -5,7 +5,7 @@ class TopicRepository:
     def random(self):
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
-        cursor.execute("SELECT * FROM topics ORDER BY RAND() LIMIT 1")
+        cursor.execute("SELECT * FROM topics WHERE deleted_at IS NULL ORDER BY RAND() LIMIT 1")
         row = cursor.fetchone()
         return row
 
@@ -20,3 +20,43 @@ class TopicRepository:
         )
         connection.commit()
         return cursor.lastrowid
+
+    # 取得所有商品
+    def getAllPaginates(self, page: int = 1, page_size: int = 10):
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+
+        startFrom  = (page - 1) * page_size
+        statement  = "SELECT SQL_CALC_FOUND_ROWS topics.* FROM topics WHERE deleted_at IS NULL "
+        statement += "LIMIT %s OFFSET %s"
+        cursor.execute(statement, (page_size, startFrom));
+        result = cursor.fetchall();
+
+        # 計算總頁數
+        cursor.execute("SELECT FOUND_ROWS() as total_count");
+        total_count = cursor.fetchone()['total_count'];
+
+        return {
+            'total_count': total_count,
+            'page': page,
+            'page_size': page_size,
+            'result': result
+        }
+
+    # 任務下架
+    def delete(self, ids: list = []):
+        if len(ids) == 0:
+            return
+
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp()
+
+        placeholders = ', '.join(['%s'] * len(ids))  # 生成正確的佔位符數量
+        sql = f"UPDATE topics SET deleted_at = %s WHERE id IN ({placeholders})"
+        params = [currentTimestamp] + ids           # 合併參數順序
+
+        cursor.execute(sql, params)
+        connection.commit()
+
+        return cursor.rowcount

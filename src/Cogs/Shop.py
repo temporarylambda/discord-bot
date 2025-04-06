@@ -57,7 +57,7 @@ class Shop(commands.GroupCog):
             emb.set_footer(text=f"Page {page} from {n}")
             return emb, n
 
-        await PaginationView(interaction, get_page).navegate()
+        await PaginationView(interaction, get_page).navigate()
 
     @app_commands.command(name='購買商品')
     @app_commands.describe(merchandise_id="商品 ID")

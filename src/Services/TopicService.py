@@ -59,3 +59,9 @@ class TopicService:
 
     def create(self, topic: dict):
         return self.TopicRepository.create(topic);
+
+    def getAllPaginates(self, page: int = 1, page_size: int = 10):
+        return self.TopicRepository.getAllPaginates(page, page_size);
+
+    def delete(self, ids: list = []):
+        return self.TopicRepository.delete(ids=ids);
