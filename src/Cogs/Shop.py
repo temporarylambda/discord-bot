@@ -101,7 +101,7 @@ class Shop(commands.GroupCog):
         embed.add_field(name="商品名稱", value=f"{Merchandise['name']}", inline=False)
         embed.add_field(name="商品描述", value=f"{Merchandise['description']}", inline=False)
         embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
-        embed.add_field(name="商品擁有者", value=Merchandise['user_name'] if Merchandise['user_name'] is not None else "系統", inline=False)
+        embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
         embed.add_field(name="購買數量", value=f"{quantity} 個", inline=False)
         embed.add_field(name="合計總價", value=f"{Merchandise['price'] * quantity} 元", inline=False)
 
@@ -247,7 +247,7 @@ class Shop(commands.GroupCog):
         embed.add_field(name="商品名稱", value=f"{Merchandise['name']}", inline=False)
         embed.add_field(name="商品描述", value=Merchandise['description'] if Merchandise['description'] is not None else "無", inline=False)
         embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
-        embed.add_field(name="商品擁有者", value=interaction.user.mention, inline=False)
+        embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
 
         View = discord.ui.View(timeout=None)

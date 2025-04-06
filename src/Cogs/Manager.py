@@ -6,6 +6,7 @@ from Services.RoleService import RoleService
 from Services.UserService import UserService
 from Services.TransferService import TransferService
 from Services.TopicService import TopicService
+from Services.MerchandiseService import MerchandiseService
 from Views.PaginationView import PaginationView
 
 class Manager(commands.GroupCog):
@@ -190,9 +191,6 @@ class Manager(commands.GroupCog):
                 if (Merchandise is None or Merchandise['deleted_at'] is not None):
                     await interaction.response.edit_message(content=f"{interaction.user.mention} 您查詢的商品不存在！", view=None)
                     return
-                elif (str(Merchandise['uuid']) != str(interaction.user.id)):
-                    await interaction.response.edit_message(content=f"{interaction.user.mention} 您無法下架別人的商品！", view=None)
-                    return
 
                 # 確認下架
                 UserServiceObject = UserService()
@@ -211,9 +209,6 @@ class Manager(commands.GroupCog):
         if (Merchandise is None or Merchandise['deleted_at'] is not None):
             await interaction.response.send_message(content=f"{interaction.user.mention} 您查詢的商品不存在！")
             return
-        elif (str(Merchandise['uuid']) != str(interaction.user.id)):
-            await interaction.response.send_message(content=f"{interaction.user.mention} 您無法下架別人的商品！", ephemeral=True)
-            return
         
         embed = discord.Embed(title="商品下架確認", description="")
         embed.description = f"{interaction.user.mention} 您好！這是您查詢的商品\n\n"
@@ -223,7 +218,7 @@ class Manager(commands.GroupCog):
         embed.add_field(name="商品名稱", value=f"{Merchandise['name']}", inline=False)
         embed.add_field(name="商品描述", value=Merchandise['description'] if Merchandise['description'] is not None else "無", inline=False)
         embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
-        embed.add_field(name="商品擁有者", value=interaction.user.mention, inline=False)
+        embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
 
         View = discord.ui.View(timeout=None)
