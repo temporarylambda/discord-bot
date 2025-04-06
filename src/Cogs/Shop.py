@@ -17,19 +17,10 @@ class Shop(commands.GroupCog):
         print(f" |---- {self.__class__.__name__} 已經載入！")
 
     @app_commands.command(name='查看商品', description='商店街——從逃過羞恥任務的刷新卷，到讓人心跳加速的商品，應有盡有！')
-    @app_commands.describe(
-        member="（選填）只想查看特定成員的商品？可以透過這個選項設定你想只查看誰所上架的商品！",
-        showDescription="（選填）是否顯示商品的描述？",
-    )
-    @app_commands.choices(
-        showDescription=[
-            app_commands.Choice(name="是", value="yes"),
-            app_commands.Choice(name="否", value="no"),
-        ]
-    )
+    @app_commands.describe(member="（選填）只想查看特定成員的商品？可以透過這個選項設定你想只查看誰所上架的商品！")
     @RoleService.checkIsNotBanned()
-    async def shop(self, interaction: discord.Interaction, member: discord.Member = None, showDescription: app_commands.Choice[str] = None):
-        isShowDescription = True if showDescription is not None and showDescription.value == "yes" else False
+    async def shop(self, interaction: discord.Interaction, member: discord.Member = None):
+        isShowDescription = True
         UserServiceObject = UserService()
         
         User = UserServiceObject.firstOrCreate(member) if member is not None else None
