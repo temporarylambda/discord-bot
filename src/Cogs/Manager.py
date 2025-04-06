@@ -80,7 +80,7 @@ class Manager(commands.GroupCog):
                     return
 
                 TopicServiceObject = TopicService()
-                TopicServiceObject.create({'description': description, 'reward': reward, 'note': note})
+                topicId = TopicServiceObject.create({'description': description, 'reward': reward, 'note': note})
 
                 print(f"上架任務 - {interaction.user.name} - {description} - {reward} - {note}")
                 embed = discord.Embed(title="任務上架成功", description="", color=Colour.gold())
@@ -88,6 +88,7 @@ class Manager(commands.GroupCog):
                 embed.description = f"# 商品快訊\n\n"
                 embed.description += f"{interaction.user.mention} 上架了一則新簽到任務！\n"
                 embed.description += f"-# 究竟誰會是第一位受害者呢？\n\n"
+                embed.add_field(name="任務 ID", value=topicId, inline=False)
                 embed.add_field(name="任務內容", value=description, inline=False)
                 embed.add_field(name="任務獎勵", value='無' if reward is None else str(reward) + ' 元', inline=False)
                 embed.add_field(name="任務備註", value="無" if note is None else note, inline=False)
@@ -149,6 +150,15 @@ class Manager(commands.GroupCog):
 
                 self.disabled = True
                 await interaction.response.edit_message(content=f"{interaction.user.mention} 已為您下架指定的任務～", view=self.view)
+
+                embed = discord.Embed(title="管理方操作", description="", color=Colour.gold())
+                embed.add_field(name="任務 ID", value=self.topic_id, inline=False)
+                embed.add_field(name="任務內容", value=f"{Topic['description']}", inline=False)
+                embed.add_field(name="任務獎勵", value=f"{Topic['reward']} 元" if Topic['reward'] is not None else "無", inline=False)
+                embed.add_field(name="任務備注", value=Topic['note'] if not None else "無", inline=False)
+                embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+                embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
+                await interaction.followup.send(embed=embed)
                 return
 
         TopicServiceObject = TopicService()
@@ -168,7 +178,7 @@ class Manager(commands.GroupCog):
         embed.add_field(name="任務 ID", value=topic_id, inline=False)
         embed.add_field(name="任務內容", value=f"{Topic['description']}", inline=False)
         embed.add_field(name="任務獎勵", value=f"{Topic['reward']} 元" if Topic['reward'] is not None else "無", inline=False)
-        embed.add_field(name="任務備注", value=Topic['note'] if Topic['note'] is not None else "無", inline=False)
+        embed.add_field(name="任務備注", value=Topic['note'] if not None else "無", inline=False)
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
 
         View = discord.ui.View(timeout=None)
@@ -198,6 +208,16 @@ class Manager(commands.GroupCog):
                 MerchandiseServiceObject.delete(ids=[Merchandise['id']], user_id=User['id'])
                 self.disabled = True
                 await interaction.response.edit_message(content=f"{interaction.user.mention} 已為您下架指定的商品～", view=self.view)
+
+                embed = discord.Embed(title="管理方操作", description="", color=Colour.gold())
+                embed.add_field(name="商品 ID", value=merchandise_id, inline=False)
+                embed.add_field(name="商品名稱", value=f"{Merchandise['name']}", inline=False)
+                embed.add_field(name="商品描述", value=Merchandise['description'] if Merchandise['description'] is not None else "無", inline=False)
+                embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
+                embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
+                embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+                embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
+                await interaction.followup.send(embed=embed)
                 return
 
         MerchandiseServiceObject = MerchandiseService()
