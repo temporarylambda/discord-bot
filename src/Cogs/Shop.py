@@ -154,10 +154,12 @@ class Shop(commands.GroupCog):
             merchandisePrice  = discord.ui.TextInput(label="商品價格", placeholder="請輸入商品價格", required=True)
 
             async def on_submit(self, interaction: discord.Interaction):
+                if (self.merchandisePrice.value.isnumeric() == False):
+                    await interaction.response.send_message(f"{interaction.user.mention} 商品價格必須是數字！", ephemeral=True)
+                    return
                 if (int(self.merchandisePrice.value) <= 0):
                     await interaction.response.send_message(f"{interaction.user.mention} 商品價格必須大於 0！", ephemeral=True)
                     return
-
                 UserServiceObject = UserService()
                 User = UserServiceObject.firstOrCreate(interaction.user)
                 MerchandiseServiceObject = MerchandiseService()
