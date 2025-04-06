@@ -16,5 +16,5 @@ class MerchandiseService:
         print(user_id, merchandise)
         return self.MerchandiseRepository.create(user_id, merchandise);
 
-    def delete(self, ids):
-        return self.MerchandiseRepository.delete(ids);
+    def delete(self, ids, user_id):
+        return self.MerchandiseRepository.delete(ids=ids, user_id=user_id);

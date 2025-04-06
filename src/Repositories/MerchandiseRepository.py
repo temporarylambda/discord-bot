@@ -81,7 +81,7 @@ class MerchandiseRepository:
         return cursor.lastrowid;
 
     # 下架商品
-    def delete(self, ids: list = []):
+    def delete(self, ids: list = [], user_id = None):
         if len(ids) == 0:
             return 0 # 如果沒有傳入 ids，則不進行任何操作
 
@@ -89,14 +89,25 @@ class MerchandiseRepository:
         cursor = DatabaseConnection.cursor(connection)
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
 
-        placeholders = ', '.join(['%s'] * len(ids))  # 根據 ids 數量產生 %s
-        statement = f"""
-            UPDATE merchandises
-            SET deleted_at = %s
-            WHERE id IN ({placeholders}) AND deleted_at IS NULL
-        """
-        parameters = [currentTimestamp] + ids  # 將 currentTimestamp 與 ids 合併為一個參數列表
-        cursor.execute(statement, parameters)
+        # 使用 SQL 的 IN 語句來處理多個 id
+        condition = [
+            "deleted_at IS NULL",
+            f"id IN ({', '.join(['%s'] * len(ids))})"
+        ]
+
+        # 如果有傳入 user_id，則加入條件
+        if user_id is not None:
+            condition.append("user_id = %s")
+        
+        # 將條件組合成一個字串
+        condition = ' AND '.join(condition)
+        print(f"UPDATE merchandises SET deleted_at = %s WHERE {condition}")
+
+        # 將 ids 和 user_id 參數傳入
+        cursor.execute(
+            f"UPDATE merchandises SET deleted_at = %s WHERE {condition}", 
+            [currentTimestamp, user_id]
+        )
         connection.commit()
 
         return cursor.rowcount
