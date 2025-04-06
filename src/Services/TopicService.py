@@ -56,3 +56,6 @@ class TopicService:
         UserRepositoryObject = UserRepository();
         UserRepositoryObject.checkIn(user_id);
         return updatedRowsCount;
+
+    def create(self, topic: dict):
+        return self.TopicRepository.create(topic);

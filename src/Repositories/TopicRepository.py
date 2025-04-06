@@ -10,14 +10,13 @@ class TopicRepository:
         return row
 
     # 取得所有題目
-    def create(self, description, reward=50, note=None):
+    def create(self, topic: dict):
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
-
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
         cursor.execute(
             "INSERT INTO topics (description, reward, note, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)", 
-            (description, reward, note, currentTimestamp, currentTimestamp)
+            (topic['description'], topic['reward'], topic['note'], currentTimestamp, currentTimestamp)
         )
         connection.commit()
         return cursor.lastrowid
