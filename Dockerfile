@@ -10,5 +10,8 @@ COPY src/requirements.txt ./
 # 安裝 Python 依賴
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 執行指令
+RUN alembic init alembic
+
 # 設定環境變數 (避免 Python 產生緩存)
 ENV PYTHONUNBUFFERED=1

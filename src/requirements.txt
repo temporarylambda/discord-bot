@@ -1,3 +1,5 @@
 discord
 mysql-connector-python
 watchdog
+alembic
+python-dotenv
