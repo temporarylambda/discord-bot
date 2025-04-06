@@ -89,24 +89,16 @@ class MerchandiseRepository:
         cursor = DatabaseConnection.cursor(connection)
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
 
-        # 使用 SQL 的 IN 語句來處理多個 id
-        condition = [
-            "deleted_at IS NULL",
-            f"id IN ({', '.join(['%s'] * len(ids))})"
-        ]
-
-        # 如果有傳入 user_id，則加入條件
+        placeholders = ', '.join(['%s'] * len(ids))
+        condition = f"deleted_at IS NULL AND id IN ({placeholders})"
+        parameters = [currentTimestamp] + ids
         if user_id is not None:
-            condition.append("user_id = %s")
-        
-        # 將條件組合成一個字串
-        condition = ' AND '.join(condition)
-        print(f"UPDATE merchandises SET deleted_at = %s WHERE {condition}")
+            condition += " AND user_id = %s"
+            parameters.append(user_id)
 
-        # 將 ids 和 user_id 參數傳入
         cursor.execute(
             f"UPDATE merchandises SET deleted_at = %s WHERE {condition}", 
-            [currentTimestamp, user_id]
+            parameters
         )
         connection.commit()
 

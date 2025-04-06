@@ -187,6 +187,28 @@ class Shop(commands.GroupCog):
     @app_commands.describe(merchandise_id="商品 ID")
     @RoleService.checkIsNotBanned()
     async def merchandiseUnavailable(self, interaction: discord.Interaction, merchandise_id: int = None):
+        class ConfirmButton(discord.ui.Button):
+            def __init__(self, *args, **kwargs):
+                self.merchandise_id = kwargs.pop('merchandise_id')
+                super().__init__(*args, **kwargs)
+
+            async def callback(self, interaction: discord.Interaction):
+                Merchandise = MerchandiseServiceObject.findById(self.merchandise_id)
+                if (Merchandise is None or Merchandise['deleted_at'] is not None):
+                    await interaction.response.edit_message(content=f"{interaction.user.mention} 您查詢的商品不存在！", view=None)
+                    return
+                elif (str(Merchandise['uuid']) != str(interaction.user.id)):
+                    await interaction.response.edit_message(content=f"{interaction.user.mention} 您無法下架別人的商品！", view=None)
+                    return
+
+                # 確認下架
+                UserServiceObject = UserService()
+                User = UserServiceObject.firstOrCreate(interaction.user)
+                MerchandiseServiceObject.delete(ids=[Merchandise['id']], user_id=User['id'])
+                self.disabled = True
+                await interaction.response.edit_message(content=f"{interaction.user.mention} 已為您下架指定的商品～", view=self.view)
+                return
+
         MerchandiseServiceObject = MerchandiseService()
         if (merchandise_id is None):
             await interaction.response.send_message(content=f"{interaction.user.mention} 您沒有選擇任何商品！", ephemeral=True)
@@ -196,14 +218,24 @@ class Shop(commands.GroupCog):
         if (Merchandise is None or Merchandise['deleted_at'] is not None):
             await interaction.response.send_message(content=f"{interaction.user.mention} 您查詢的商品不存在！")
             return
-        elif (Merchandise['uuid'] != interaction.user.id):
+        elif (str(Merchandise['uuid']) != str(interaction.user.id)):
             await interaction.response.send_message(content=f"{interaction.user.mention} 您無法下架別人的商品！", ephemeral=True)
             return
         
-        UserServiceObject = UserService()
-        User = UserServiceObject.firstOrCreate(interaction.user)
-        MerchandiseServiceObject.delete(ids=[merchandise_id], user_id=User['id'])
-        await interaction.response.send_message(content=f"{interaction.user.mention} 已為您下架指定的商品～", ephemeral=True)
+        embed = discord.Embed(title="商品下架確認", description="")
+        embed.description = f"{interaction.user.mention} 您好！這是您查詢的商品\n\n"
+        embed.description += "-# **使用說明**\n"
+        embed.description += "-# 若確定要下架這個商品，\n-# 請點選「確認下架」按鈕。\n\n\n"
+        embed.add_field(name="商品 ID", value=merchandise_id, inline=False)
+        embed.add_field(name="商品名稱", value=f"{Merchandise['name']}", inline=False)
+        embed.add_field(name="商品描述", value=f"{Merchandise['description']}", inline=False)
+        embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
+        embed.add_field(name="商品擁有者", value=interaction.user.mention, inline=False)
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+
+        View = discord.ui.View(timeout=None)
+        View.add_item(ConfirmButton(label="確認下架", style=discord.ButtonStyle.red, disabled=False, row=1, merchandise_id=merchandise_id))
+        await interaction.response.send_message(embed=embed, view=View, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Shop(bot))
