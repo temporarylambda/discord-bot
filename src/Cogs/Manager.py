@@ -7,6 +7,7 @@ from Services.UserService import UserService
 from Services.TransferService import TransferService
 from Services.TopicService import TopicService
 from Services.MerchandiseService import MerchandiseService
+from Enums.MerchandiseSystemType import MerchandiseSystemType
 from Views.PaginationView import PaginationView
 
 class Manager(commands.GroupCog):
@@ -200,6 +201,9 @@ class Manager(commands.GroupCog):
                 Merchandise = MerchandiseServiceObject.findById(self.merchandise_id)
                 if (Merchandise is None or Merchandise['deleted_at'] is not None):
                     await interaction.response.edit_message(content=f"{interaction.user.mention} 您查詢的商品不存在！", view=None)
+                    return
+                elif (Merchandise['system_type'] == MerchandiseSystemType.SYSTEM_CHECK_IN_REFRESH.value):
+                    await interaction.response.edit_message(content=f"{interaction.user.mention} 任務刷新卷無法被下架！", view=None)
                     return
 
                 # 確認下架

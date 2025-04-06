@@ -1,26 +1,26 @@
 from logging.config import fileConfig
-
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
 import os
 from dotenv import load_dotenv
 from alembic import context
-load_dotenv()
+
+load_dotenv()  # 加載環境變數
 
 # 從 .env 檔案讀取資料庫相關的變數
 MYSQL_USER = os.getenv('MYSQL_USER')
 MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
-MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')  # 如果沒有設定 HOST，預設為 localhost
-MYSQL_PORT = os.getenv('MYSQL_PORT', '3306')  # 默認 MySQL 端口
+MYSQL_HOST = os.getenv('MYSQL_HOST')
 MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
+MYSQL_PORT = os.getenv('MYSQL_PORT')
 
 # 設置 SQLAlchemy URL
-SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:3306/{MYSQL_DATABASE}"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+config.set_main_option('sqlalchemy.url', SQLALCHEMY_DATABASE_URL)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -51,7 +51,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = SQLALCHEMY_DATABASE_URL  # 使用環境變數設置的 URL
     context.configure(
         url=url,
         target_metadata=target_metadata,

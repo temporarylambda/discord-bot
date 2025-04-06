@@ -3,3 +3,5 @@ mysql-connector-python
 watchdog
 alembic
 python-dotenv
+pymysql
+cryptography

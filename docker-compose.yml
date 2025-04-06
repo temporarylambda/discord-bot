@@ -6,12 +6,13 @@ services:
     container_name: discord-bot
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - .env
     volumes:
       - ./src:/bot
-    command: ["python", "watcher.py"]
+    command: /bin/bash -c "alembic upgrade head && python main.py"
 
 
   db:
@@ -28,6 +29,12 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
 volumes:
   mysql_data:

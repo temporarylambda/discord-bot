@@ -53,8 +53,8 @@ class TopicRepository:
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
 
         placeholders = ', '.join(['%s'] * len(ids))  # 生成正確的佔位符數量
-        sql = f"UPDATE topics SET deleted_at = %s WHERE id IN ({placeholders})"
-        params = [currentTimestamp] + ids           # 合併參數順序
+        sql = f"UPDATE topics SET deleted_at = %s, updated_at = %s WHERE id IN ({placeholders})"
+        params = [currentTimestamp, currentTimestamp] + ids           # 合併參數順序
 
         cursor.execute(sql, params)
         connection.commit()
