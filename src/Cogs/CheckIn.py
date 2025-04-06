@@ -68,7 +68,6 @@ class CheckIn(commands.GroupCog):
             return
         
         DailyCheckInTopic = TopicServiceObject.take(User['id'])
-        print(DailyCheckInTopic)
         if DailyCheckInTopic is None:
             await interaction.response.send_message(f"{interaction.user.mention} 目前沒有任何題目可以領取！", ephemeral=True)
             return
