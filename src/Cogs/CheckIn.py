@@ -68,6 +68,11 @@ class CheckIn(commands.GroupCog):
             return
         
         DailyCheckInTopic = TopicServiceObject.take(User['id'])
+        print(DailyCheckInTopic)
+        if DailyCheckInTopic is None:
+            await interaction.response.send_message(f"{interaction.user.mention} 目前沒有任何題目可以領取！", ephemeral=True)
+            return
+
         embed = discord.Embed(title="每日簽到！", description=f"{interaction.user.mention} 您好！\n這是您的簽到題目！")
         embed.add_field(name="題目", value=DailyCheckInTopic['description'], inline=False)
         if DailyCheckInTopic['reward'] is not None:
