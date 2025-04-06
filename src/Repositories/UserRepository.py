@@ -98,7 +98,7 @@ class UserRepository:
 
         # 撈取所有簽到日期不是昨天的使用者，把連續簽到天數重置為 0
         cursor.execute(
-            "UPDATE users SET consecutive_checkin_days = 0, updated_at = %s WHERE DATE(latest_checkin_at) != %s AND consecutive_checkin_days > 0",
-            (currentTimestamp, yesterday)
+            "UPDATE users SET consecutive_checkin_days = 0, updated_at = %s WHERE (DATE(latest_checkin_at) != %s AND DATE(latest_checkin_at) != %s) AND consecutive_checkin_days > 0",
+            (currentTimestamp, yesterday, currentTimestamp)
         );
         connection.commit();

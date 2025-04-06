@@ -10,30 +10,6 @@ from Services.TopicService import TopicService
 from Enums.MerchandiseSystemType import MerchandiseSystemType
 from Services.RoleService import RoleService
 
-# 通常商品兌換邏輯 - 撥款給上架人並發送私訊給上架人
-async def normalMerchandiseRedeemCallback(User: dict, interaction: discord.Interaction, UserInventoryServiceObject: UserInventoryService, Inventory: dict):
-    # 撥款給上架人
-    TransferServiceObject = TransferService()
-    redeemResult = TransferServiceObject.redeemMerchandise(User=User, Inventory=Inventory)
-
-    # 更新 UserInventory 對應資料的使用狀態，並記錄 redeemed_at 時間
-    UserInventoryServiceObject.redeem(Inventory['id'])
-
-    # # 發送 Direct Message 給上架者，告知兌換者的資訊
-    merchant_uuid = Inventory['uuid']
-    if merchant_uuid is not None:
-        message =  "===================================\n"
-        message += "商品兌換通知 - 金額已轉入您的帳戶\n"
-        message += "===================================\n"
-        message += f"購買人： {interaction.user.mention}\n"   
-        message += f"商　品： {Inventory['name']}\n"
-        message += f"單　價： {redeemResult['price']} 元\n"
-        message += f"手續費： {redeemResult['fee']} 元\n"
-        message += f"實　收： {redeemResult['final_price']} 元\n"
-        await UserService.sendMessage(bot=interaction.client, guildId=interaction.guild.id, uuid=merchant_uuid, message=message)
-
-    await interaction.response.edit_message(content=f"{interaction.user.mention} 您已成功兌換了 {Inventory['name']}，相關費用已經發放到對方戶頭！", view=None)
-
 class Inventory(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot

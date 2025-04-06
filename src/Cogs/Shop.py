@@ -157,15 +157,18 @@ class Shop(commands.GroupCog):
     async def merchandiseAvailable(self, interaction: discord.Interaction):
         class MerchandiseModal(discord.ui.Modal, title="商品上架表格"):
             merchandiseName  = discord.ui.TextInput(label="商品名稱", placeholder="請輸入商品名稱", required=True, min_length=1, max_length=255)
-            merchandisePrice  = discord.ui.TextInput(label="商品價格", placeholder="請輸入商品價格", required=True)
+            merchandisePrice = discord.ui.TextInput(label="商品價格", placeholder="請輸入商品價格", required=True)
             merchandiseDesc  = discord.ui.TextInput(label="商品描述", placeholder="請輸入商品描述", style = discord.TextStyle.paragraph,  min_length=1, max_length=255, required=False)
 
             async def on_submit(self, interaction: discord.Interaction):
                 if (self.merchandisePrice.value.isnumeric() == False):
                     await interaction.response.send_message(f"{interaction.user.mention} 商品價格必須是數字！", ephemeral=True)
                     return
-                if (int(self.merchandisePrice.value) <= 0):
+                elif (int(self.merchandisePrice.value) <= 0):
                     await interaction.response.send_message(f"{interaction.user.mention} 商品價格必須大於 0！", ephemeral=True)
+                    return
+                elif (int(self.merchandisePrice.value) > 1000):
+                    await interaction.response.send_message(f"{interaction.user.mention} 商品價格必須小於或等於 1000！", ephemeral=True)
                     return
                 
                 description = self.merchandiseDesc.value if (self.merchandiseDesc.value != "" and self.merchandiseDesc.value is not None) else None
