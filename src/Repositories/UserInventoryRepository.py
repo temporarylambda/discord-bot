@@ -11,6 +11,7 @@ class UserInventoryRepository:
                 `merchandises`.`id` AS `merchandise_id`,
                 `merchandises`.`user_id` AS `merchant_id`,
                 `users`.`name` AS `merchant_name`,
+                `users`.`uuid`,
                 `merchandises`.`name`,
                 COUNT(`user_inventories`.`id`) AS `quantity`
             FROM `user_inventories`
@@ -18,7 +19,7 @@ class UserInventoryRepository:
             LEFT JOIN `users` ON `users`.`id` = `merchandises`.`user_id`
             WHERE `user_inventories`.`user_id` = %s AND `user_inventories`.`status` = %s
             GROUP BY `merchandises`.`id`
-            ORDER BY COUNT(`user_inventories`.`id`) DESC 
+            ORDER BY `merchandises`.`id` ASC 
         """
         parameters = [user_id, UserInventoryStatus.PENDING.value]
         if (page_size is not None):
@@ -78,7 +79,7 @@ class UserInventoryRepository:
                     merchandises.user_id AS merchant_id,
                     merchandises.system_type,
                     users.name AS merchant_name,
-                    users.uuid AS merchant_uuid
+                    users.uuid
                 FROM user_inventories 
                 INNER JOIN merchandises ON merchandises.id = user_inventories.merchandise_id
                 LEFT JOIN users ON users.id = merchandises.user_id

@@ -113,7 +113,7 @@ async def normalMerchandiseRedeemCallback(Button: discord.ui.Button, interaction
     UserInventoryServiceObject.redeem(Inventory['id'])
 
     # # 發送 Direct Message 給上架者，告知兌換者的資訊
-    merchant_uuid = Inventory['merchant_uuid']
+    merchant_uuid = Inventory['uuid']
     if merchant_uuid is not None:
         message =  "===================================\n"
         message += "商品兌換通知 - 金額已轉入您的帳戶\n"
@@ -155,10 +155,8 @@ class Inventory(commands.GroupCog):
                 emb.description += "目前沒有任何商品！\n\n"
             else:
                 for index, merchandises in enumerate(result['result']):
-
-                    emb.description += f"**{index + 1}.** **{merchandises['name']}**"
-                    if merchandises["merchant_name"] is not None:
-                        emb.description += f" (By **{merchandises['merchant_name']})**"
+                    emb.description += f"**{merchandises['merchandise_id']}.** **{merchandises['name']}**"
+                    emb.description += '' if merchandises["uuid"] is None else f" (By **<@{merchandises['uuid']}>)**"
                     emb.description += f" - {merchandises['quantity']} 個\n"
 
             emb.description += "\n"
