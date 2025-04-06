@@ -10,7 +10,7 @@ class PaginationView(discord.ui.View):
         super().__init__()
 
     async def navegate(self):
-        emb, self.total_pages = await self.get_page(self.index)
+        emb, self.total_pages = await self.get_page(self, self.index)
 
         if self.total_pages <= 1:
             await self.interaction.response.send_message(embed=emb, ephemeral=True)
@@ -19,7 +19,7 @@ class PaginationView(discord.ui.View):
             await self.interaction.response.send_message(embed=emb, view=self, ephemeral=True)
 
     async def edit_page(self, interaction: discord.Interaction):
-        emb, self.total_pages = await self.get_page(self.index)
+        emb, self.total_pages = await self.get_page(self, self.index)
         self.update_buttons()
         await interaction.response.edit_message(embed=emb, view=self)
 

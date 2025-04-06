@@ -26,7 +26,7 @@ class Shop(commands.GroupCog):
         UserId = User['id'] if User is not None else None
 
         L = 10    # elements per page
-        async def get_page(page: int):
+        async def get_page(view:discord.ui.View, page: int):
             MerchandiseServiceObject = MerchandiseService()
             result = MerchandiseServiceObject.getAllPaginates(UserId , page, L)
 
