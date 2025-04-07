@@ -31,13 +31,25 @@ class Manager(commands.GroupCog):
         TransferServiceObject = TransferService()
         TransferServiceObject.giveMoney(AdminUser, ToUser, amount, note)
 
-        embed = discord.Embed(title="管理方操作", description="", color=Colour.gold())
+        embed = discord.Embed(title="管理方操作", description="金額發放", color=Colour.gold())
         embed.add_field(name="發放對象", value=ToUser['name'], inline=False)
         embed.add_field(name="發放金額", value=f"{amount} 元", inline=False)
         if note is not None:
             embed.add_field(name="備註", value=note, inline=False)
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
         embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
+
+        # 取得發放金額後的最新狀態
+        ToUser = UserServiceObject.firstOrCreate(user)
+        message =  "====================================\n"
+        message += "管理方操作 - 金額發放\n"
+        message += "====================================\n"
+        message += f"發放人： {interaction.user.mention}\n"   
+        message += f"金　額： {amount} 元\n"
+        message += f"備　註： {note} 個\n" if note is not None else ""
+        message += f"餘　額： {ToUser['balance']} 元\n"
+        message += f"-# （若有疑慮，請操作客服單取向管理員聯繫）"
+        await UserService.sendMessage(self.bot, interaction.guild.id, ToUser['uuid'], message)
         await interaction.response.send_message(embed=embed)
 
     # 金錢扣除
@@ -53,13 +65,25 @@ class Manager(commands.GroupCog):
         TransferServiceObject = TransferService()
         TransferServiceObject.takeMoney(AdminUser, ToUser, amount, note)
 
-        embed = discord.Embed(title="管理方操作", description="", color=Colour.gold())
+        embed = discord.Embed(title="管理方操作", description="金額扣除", color=Colour.gold())
         embed.add_field(name="扣除對象", value=ToUser['name'], inline=False)
         embed.add_field(name="扣除金額", value=f"{amount} 元", inline=False)
         if note is not None:
             embed.add_field(name="備註", value=note, inline=False)
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
         embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
+
+        # 取得發放金額後的最新狀態
+        ToUser = UserServiceObject.firstOrCreate(user)
+        message =  "====================================\n"
+        message += "管理方操作 - 金額扣除\n"
+        message += "====================================\n"
+        message += f"發放人： {interaction.user.mention}\n"   
+        message += f"金　額： {amount} 元\n"
+        message += f"備　註： {note} 個\n" if note is not None else ""
+        message += f"餘　額： {ToUser['balance']} 元\n"
+        message += f"-# （若有疑慮，請操作客服單取向管理員聯繫）"
+        await UserService.sendMessage(self.bot, interaction.guild.id, ToUser['uuid'], message)
         await interaction.response.send_message(embed=embed)
 
     # 上架任務
@@ -86,7 +110,7 @@ class Manager(commands.GroupCog):
                 print(f"上架任務 - {interaction.user.name} - {description} - {reward} - {note}")
                 embed = discord.Embed(title="任務上架成功", description="", color=Colour.gold())
                 embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
-                embed.description = f"# 商品快訊\n\n"
+                embed.description = f"# 任務快訊\n\n"
                 embed.description += f"{interaction.user.mention} 上架了一則新簽到任務！\n"
                 embed.description += f"-# 究竟誰會是第一位受害者呢？\n\n"
                 embed.add_field(name="任務 ID", value=topicId, inline=False)
@@ -152,11 +176,11 @@ class Manager(commands.GroupCog):
                 self.disabled = True
                 await interaction.response.edit_message(content=f"{interaction.user.mention} 已為您下架指定的任務～", view=self.view)
 
-                embed = discord.Embed(title="管理方操作", description="", color=Colour.gold())
+                embed = discord.Embed(title="管理方操作", description="任務下架", color=Colour.gold())
                 embed.add_field(name="任務 ID", value=self.topic_id, inline=False)
                 embed.add_field(name="任務內容", value=f"{Topic['description']}", inline=False)
                 embed.add_field(name="任務獎勵", value=f"{Topic['reward']} 元" if Topic['reward'] is not None else "無", inline=False)
-                embed.add_field(name="任務備注", value=Topic['note'] if not None else "無", inline=False)
+                embed.add_field(name="任務備注", value=Topic['note'] if Topic['note'] is not None else "無", inline=False)
                 embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
                 embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
                 await interaction.followup.send(embed=embed)
@@ -188,13 +212,14 @@ class Manager(commands.GroupCog):
 
     # 強制下架商品
     @app_commands.command(name="強制下架商品", description="強制下架指定的商品")
-    @app_commands.describe(merchandise_id="要下架的商品 ID，請透過「/shop 查看商品」指令查看")
+    @app_commands.describe(merchandise_id="要下架的商品 ID，請透過「/shop 查看商品」指令查看", note="下架的理由或備註 - 若沒有則不填")
     @RoleService.checkIsNotBanned()
     @RoleService.checkIsManager()
-    async def forceMerchandiseUnavailable(self, interaction: discord.Interaction, merchandise_id: int):
+    async def forceMerchandiseUnavailable(self, interaction: discord.Interaction, merchandise_id: int, note: str = None):
         class ConfirmButton(discord.ui.Button):
             def __init__(self, *args, **kwargs):
                 self.merchandise_id = kwargs.pop('merchandise_id')
+                self.note = kwargs.pop('note', None)
                 super().__init__(*args, **kwargs)
 
             async def callback(self, interaction: discord.Interaction):
@@ -213,15 +238,32 @@ class Manager(commands.GroupCog):
                 self.disabled = True
                 await interaction.response.edit_message(content=f"{interaction.user.mention} 已為您下架指定的商品～", view=self.view)
 
-                embed = discord.Embed(title="管理方操作", description="", color=Colour.gold())
+                embed = discord.Embed(title="管理方操作", description="強制商品下架", color=Colour.gold())
                 embed.add_field(name="商品 ID", value=merchandise_id, inline=False)
                 embed.add_field(name="商品名稱", value=f"{Merchandise['name']}", inline=False)
                 embed.add_field(name="商品描述", value=Merchandise['description'] if Merchandise['description'] is not None else "無", inline=False)
                 embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
                 embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
+                embed.add_field(name="下架備註", value=self.note if self.note is not None else "無", inline=False)
                 embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
                 embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
                 await interaction.followup.send(embed=embed)
+
+                message =  "====================================\n"
+                message += "管理方操作 - 強制商品下架\n"
+                message += "====================================\n"
+                message += f"管理員： {interaction.user.mention}\n"   
+                message += f"擁有者： <@{Merchandise['uuid']}>\n"
+                message += f"商品 ID： {merchandise_id}\n"
+                message += f"商品名稱： {Merchandise['name']}\n"
+                message += f"商品描述： "
+                message += f"\n{Merchandise['description']}\n" if Merchandise['description'] is not None else '無\n'
+                message += f"商品價格： {Merchandise['price']} 元\n"
+                message += f"商品擁有者： <@{Merchandise['uuid']}>\n"
+                message += f"下架備註： {self.note} \n" if self.note is not None else ''
+                message += f"商品狀態： 已下架\n"
+                message += f"-# （若有疑慮，請操作客服單取向管理員聯繫）"
+                await UserService.sendMessage(interaction.client, interaction.guild.id, Merchandise['uuid'], message)
                 return
 
         MerchandiseServiceObject = MerchandiseService()
@@ -231,7 +273,7 @@ class Manager(commands.GroupCog):
     
         Merchandise = MerchandiseServiceObject.findById(merchandise_id)
         if (Merchandise is None or Merchandise['deleted_at'] is not None):
-            await interaction.response.send_message(content=f"{interaction.user.mention} 您查詢的商品不存在！")
+            await interaction.response.send_message(content=f"{interaction.user.mention} 您查詢的商品不存在！", ephemeral=True)
             return
         
         embed = discord.Embed(title="商品下架確認", description="")
@@ -246,7 +288,7 @@ class Manager(commands.GroupCog):
         embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
 
         View = discord.ui.View(timeout=None)
-        View.add_item(ConfirmButton(label="確認下架", style=discord.ButtonStyle.red, disabled=False, row=1, merchandise_id=merchandise_id))
+        View.add_item(ConfirmButton(label="確認下架", style=discord.ButtonStyle.red, disabled=False, row=1, merchandise_id=merchandise_id, note=note))
         await interaction.response.send_message(embed=embed, view=View, ephemeral=True)
 
 async def setup(bot):

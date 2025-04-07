@@ -5,7 +5,7 @@ class UserService:
 
     def firstOrCreate(self, user):
         User = self.UserRepository.findByUUID(uuid=user.id, name=user.display_name)
-        User = User or self.UserRepository.create(uuid=user.id, name=user.display_name)
+        User = User or self.UserRepository.create(uuid=user.id, name=user.display_name, balance=500) # 預設新手獎金 500 元
         return User
 
     def getRichestUsers(self, limit: int = 1):
