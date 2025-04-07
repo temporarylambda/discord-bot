@@ -9,6 +9,17 @@
 - 多層級模組化架構
 - Docker 部署
 
+## 📜 授權 License
+
+本專案以 [AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html) 授權條款釋出，並依據原始授權條款第七條附加以下限制：
+
+> ❗ **禁止任何商業用途**，包含但不限於營利性服務、SaaS 架設、公司內部部署。  
+> 若您欲將此專案用於商業場景，請來信聯繫取得授權：**temporarylambda@gmail.com**
+
+詳細條款請見 [`LICENSE`](./LICENSE)。
+
+
+
 ---
 
 ## 🛠️ 專案結構總覽
