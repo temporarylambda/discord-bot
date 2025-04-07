@@ -12,7 +12,7 @@ services:
       - .env
     volumes:
       - ./src:/bot
-    command: /bin/bash -c "alembic upgrade head && python watcher.py"
+    command: /bin/bash -c "alembic upgrade head && python main.py"
 
 
   db:
