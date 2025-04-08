@@ -46,7 +46,7 @@ class Manager(commands.GroupCog):
         message += "====================================\n"
         message += f"發放人： {interaction.user.mention}\n"   
         message += f"金　額： {amount} 元\n"
-        message += f"備　註： {note} 個\n" if note is not None else ""
+        message += f"備　註： {note} \n" if note is not None else ""
         message += f"餘　額： {ToUser['balance']} 元\n"
         message += f"-# （若有疑慮，請操作客服單取向管理員聯繫）"
         await UserService.sendMessage(self.bot, interaction.guild.id, ToUser['uuid'], message)
@@ -80,7 +80,7 @@ class Manager(commands.GroupCog):
         message += "====================================\n"
         message += f"發放人： {interaction.user.mention}\n"   
         message += f"金　額： {amount} 元\n"
-        message += f"備　註： {note} 個\n" if note is not None else ""
+        message += f"備　註： {note} \n" if note is not None else ""
         message += f"餘　額： {ToUser['balance']} 元\n"
         message += f"-# （若有疑慮，請操作客服單取向管理員聯繫）"
         await UserService.sendMessage(self.bot, interaction.guild.id, ToUser['uuid'], message)
