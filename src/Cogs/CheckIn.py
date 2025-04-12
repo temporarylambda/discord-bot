@@ -54,7 +54,7 @@ class CheckIn(commands.GroupCog):
         print(f" |---- {self.__class__.__name__} 已經載入！")
 
     @app_commands.command(name='簽到', description='隨機出一則真心話或大挑戰！')
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def daily_check_in(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         User = UserServiceObject.firstOrCreate(interaction.user)
@@ -83,7 +83,7 @@ class CheckIn(commands.GroupCog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name='任務', description='查詢目前你的簽到任務')
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def tasks(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         User = UserServiceObject.firstOrCreate(interaction.user)
@@ -107,7 +107,7 @@ class CheckIn(commands.GroupCog):
 
     # 呈現下拉選單選擇要回報的任務 - 實際的回報邏輯在 CurrentTopicDropdownView 的 confirm_button 中
     @app_commands.command(name='任務回報', description='完成你的簽到任務來獲得獎勵！')
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def tasks_report(self, interaction: discord.Interaction):
         # 客製化 Dropdown 下拉選單取得資料
         async def getDataset(self, interaction: discord.Interaction):

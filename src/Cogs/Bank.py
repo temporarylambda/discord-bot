@@ -19,7 +19,7 @@ class Bank(commands.GroupCog):
     @app_commands.command(name='轉帳', description=f'轉帳給指定的成員！（轉帳費 {transferFee} 元）')
     @app_commands.describe(member="把錢給這個人")
     @app_commands.describe(amount="轉帳金額")
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def transfer(self, interaction: discord.Interaction, member: discord.Member, amount: int):
         UserServiceObject = UserService()
         FromUser = UserServiceObject.firstOrCreate(interaction.user)
