@@ -21,8 +21,8 @@ class Manager(commands.GroupCog):
     # 金錢發放
     @app_commands.command(name="金錢發放", description="給予用戶金錢")
     @app_commands.describe(user="要給予的用戶", amount="金錢數量", note="給予的理由或備註 - 若沒有則不填")
-    @RoleService.checkIsNotBanned()
-    @RoleService.checkIsManager()
+    @RoleService.checkBanned(False)
+    @RoleService.checkManager(True)
     async def giveMoney(self, interaction: discord.Interaction, user: discord.Member, amount: int, note: str = None):
         UserServiceObject = UserService()
         AdminUser   = UserServiceObject.firstOrCreate(interaction.user)
@@ -55,8 +55,8 @@ class Manager(commands.GroupCog):
     # 金錢扣除
     @app_commands.command(name="金錢扣除", description="扣除用戶帳上金錢 - 若用戶沒有足夠金錢，則會扣除至負數")
     @app_commands.describe(user="要扣除的用戶", amount="金錢數量", note="扣除的理由或備註 - 若沒有則不填")
-    @RoleService.checkIsNotBanned()
-    @RoleService.checkIsManager()
+    @RoleService.checkBanned(False)
+    @RoleService.checkManager(True)
     async def takeMoney(self, interaction: discord.Interaction, user: discord.Member, amount: int, note: str = None):
         UserServiceObject = UserService()
         AdminUser   = UserServiceObject.firstOrCreate(interaction.user)
@@ -88,8 +88,8 @@ class Manager(commands.GroupCog):
 
     # 上架任務
     @app_commands.command(name="上架任務", description="上架任務")
-    @RoleService.checkIsNotBanned()
-    @RoleService.checkIsManager()
+    @RoleService.checkBanned(False)
+    @RoleService.checkManager(True)
     async def createTopic(self, interaction: discord.Interaction):
         class TopicModal(discord.ui.Modal, title="簽到任務上架表格"):
             description = discord.ui.TextInput(label="任務內容", placeholder="任務內容", required=True, min_length=1, max_length=255)
@@ -125,8 +125,8 @@ class Manager(commands.GroupCog):
 
     # 任務清單
     @app_commands.command(name="任務清單", description="查看的任務有哪些")
-    @RoleService.checkIsNotBanned()
-    @RoleService.checkIsManager()
+    @RoleService.checkBanned(False)
+    @RoleService.checkManager(True)
     async def topicList(self, interaction: discord.Interaction):
         L = 10    # elements per page
         async def get_page(view:discord.ui.View, page: int):
@@ -154,8 +154,8 @@ class Manager(commands.GroupCog):
     # 下架任務
     @app_commands.command(name="下架任務", description="給予指定的任務 ID 並將該則任務進行下架")
     @app_commands.describe(topic_id="要下架的任務 ID，請透過「/manager 任務清單」指令查看")
-    @RoleService.checkIsNotBanned()
-    @RoleService.checkIsManager()
+    @RoleService.checkBanned(False)
+    @RoleService.checkManager(True)
     async def deleteTopic(self, interaction: discord.Interaction, topic_id: int):
         class ConfirmButton(discord.ui.Button):
             def __init__(self, *args, **kwargs):
@@ -213,8 +213,8 @@ class Manager(commands.GroupCog):
     # 強制下架商品
     @app_commands.command(name="強制下架商品", description="強制下架指定的商品")
     @app_commands.describe(merchandise_id="要下架的商品 ID，請透過「/shop 查看商品」指令查看", note="下架的理由或備註 - 若沒有則不填")
-    @RoleService.checkIsNotBanned()
-    @RoleService.checkIsManager()
+    @RoleService.checkBanned(False)
+    @RoleService.checkManager(True)
     async def forceMerchandiseUnavailable(self, interaction: discord.Interaction, merchandise_id: int, note: str = None):
         class ConfirmButton(discord.ui.Button):
             def __init__(self, *args, **kwargs):

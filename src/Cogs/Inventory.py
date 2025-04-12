@@ -51,7 +51,7 @@ class Inventory(commands.GroupCog):
 
     @app_commands.command(name='兌換商品', description='輸入對應的商品 ID 來兌換背包中的商品！（一次兌換一個）')
     @app_commands.describe(merchandise_id="商品 ID")
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def redeem(self, interaction: discord.Interaction, merchandise_id: int):
 
         # 檢查背包物品資訊

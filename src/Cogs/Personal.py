@@ -38,7 +38,7 @@ class Personal(commands.GroupCog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="富翁榜", description="列出伺服器內前十名大富翁！")
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def richest(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         RichestUsers = UserServiceObject.getRichestUsers(10)
@@ -49,7 +49,7 @@ class Personal(commands.GroupCog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="簽到榜", description="列出伺服器內前十名簽到王！")
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def checkInChampions(self, interaction: discord.Interaction):
         UserServiceObject = UserService()
         RichestUsers = UserServiceObject.getCheckInChampions(10)

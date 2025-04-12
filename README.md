@@ -178,8 +178,8 @@ alembic history --verbose
 | 權限類型 | 說明 |
 |----------|------|
 | 無限制 | 所有人皆可使用 |
-| `不可封鎖` | 經 `RoleService.checkIsNotBanned()` 驗證，不允許被封鎖者使用 |
-| `僅限管理員` | 經 `RoleService.checkIsManager()` 驗證，僅限特定角色使用 |
+| `不可封鎖` | 經 `RoleService.checkBanned(False)` 驗證，不允許被封鎖者使用 |
+| `僅限管理員` | 經 `RoleService.checkManager(True)` 驗證，僅限特定角色使用 |
 
 ---
 
