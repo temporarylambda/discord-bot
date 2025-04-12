@@ -41,7 +41,7 @@ class GamblingDicesEighteen(commands.GroupCog, name="十八仔"):
     @app_commands.describe(amount="加入賭局的賭金，可為 0 元")
     @commands.check(checkHosted(True))
     # 必須不是賭局開啟者、不是賭局參加者才能使用此指令 - 有必要嗎？是不是可以實現同時參與多場賭局？
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def startGame(self, interaction: discord.Interaction, amount: int):
         pass
 
@@ -49,14 +49,14 @@ class GamblingDicesEighteen(commands.GroupCog, name="十八仔"):
     @app_commands.command(name='加入賭局')
     @app_commands.describe(amount="加入賭局的賭金")
     # 必須不是賭局開啟者、不是賭局參加者才能使用此指令 - 有必要嗎？是不是可以實現同時參與多場賭局？
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def joinGame(self, interaction: discord.Interaction, amount: int):
         pass
 
     # TODO: 擲骰
     @app_commands.command(name='擲骰')
     # 必須是賭局主持人或是賭局參加者才能使用此指令
-    @RoleService.checkIsNotBanned()
+    @RoleService.checkBanned(False)
     async def roleDices(self, interaction: discord.Interaction):
         pass
     
@@ -70,4 +70,5 @@ class GamblingDicesEighteen(commands.GroupCog, name="十八仔"):
  
 
 async def setup(bot):
-    await bot.add_cog(GamblingDicesEighteen(bot))
+    # await bot.add_cog(GamblingDicesEighteen(bot))
+    pass
