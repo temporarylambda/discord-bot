@@ -20,3 +20,9 @@ class TransferReasonType(Enum):
 
     # 消費者兌換商品後得到金錢
     REDEEM = 'REDEEM'
+
+    # 賭金入注
+    BET = 'BET_IN'
+
+    # 賭金贏得
+    WIN = 'BET_WIN'

@@ -8,3 +8,6 @@ class TransferRelationType(Enum):
 
     # 簽到 Topic
     DAILY_CHECK_IN_TOPIC = 'DAILY_CHECK_IN_TOPIC'
+
+    # 賭博
+    GAMBLING = 'GAMBLING'
