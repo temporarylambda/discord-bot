@@ -67,10 +67,7 @@ class GamblingDicesEighteenView(discord.ui.View):
         if (str(self.Gambling['user_id']) == str(User['id'])):
             raise GamblingException("您目前無法使用功能，由於：\n**您無法加入您自己的賭局。**")
 
-        print(interaction.message)
-        print(interaction.message.embeds)
         embed = interaction.message.embeds[0]
-        print(embed.description)
         embed.description += f"\n- {interaction.user.mention}"
         self.GamblingService.join(User, self.Gambling)
 
@@ -153,9 +150,7 @@ class GamblingDicesEighteen(commands.GroupCog, name="十八仔"):
         if (int(User['balance']) < amount):
             raise GamblingException.NOT_ENOUGH_MONEY(amount, User['balance'])
 
-        self.GamblingService.host(User, GamblingType.DICES_EIGHTEEN, amount)
-        View = GamblingDicesEighteenView(amount=amount)
-        await View.start(interaction)
+        await (GamblingDicesEighteenView(amount=amount)).start(interaction)
 
  
 

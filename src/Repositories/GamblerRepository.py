@@ -2,7 +2,7 @@ from Services.DatabaseConnection import DatabaseConnection
 from Enums.GamblerStatus import GamblerStatus
 
 class GamblerRepository:
-    def join(self, user_id: str | int, gambling_id: str | int) -> dict:
+    def join(self, user_id: str | int, gambling_id: str | int, total_bets: int) -> dict:
         """
         加入遊戲
 
@@ -18,6 +18,7 @@ class GamblerRepository:
             {
                 "gambling_id": gambling_id,
                 "user_id": user_id,
+                "total_bets": total_bets,
                 "status": GamblerStatus.PENDING.value,
                 "created_at": currentTimestamp,
                 "updated_at": currentTimestamp
@@ -53,10 +54,19 @@ class GamblerRepository:
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
-        cursor.execute(
-            "UPDATE gamblers SET total_bets = total_bets + %s, updated_at = %s WHERE gambling_id = %s AND id = %s", 
-            (amount, currentTimestamp, gambling_id, user_id)
+
+        statement, values = DatabaseConnection.createUpdateStatement(
+            'gamblers',
+            {
+                "total_bets": amount,
+                "updated_at": currentTimestamp
+            },
+            {
+                "gambling_id": gambling_id,
+                "user_id": user_id
+            }
         )
+        cursor.execute(statement, values)
         connection.commit()
         return
 

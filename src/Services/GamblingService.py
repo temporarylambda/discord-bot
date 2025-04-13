@@ -55,7 +55,7 @@ class GamblingService:
         self.TransferReasonRepository.createRelation(transfer_reason_id=transfer_reason_id, relation_type=TransferRelationType.GAMBLING, relation_ids=[Gambling['id']])
 
         # 標記參與賭局
-        joinId = self.GamblerRepository.join(user_id=User['id'], gambling_id=Gambling['id'])
+        joinId = self.GamblerRepository.join(user_id=User['id'], gambling_id=Gambling['id'], total_bets=int(Gambling['min_bet']))
 
         # 更新參與者賭金
         self.GamblerRepository.raiseBet(user_id=User['id'], gambling_id=Gambling['id'], amount=int(Gambling['min_bet']))
@@ -72,9 +72,10 @@ class GamblingService:
         Gambling = self.GamblerRepository.findById(Gambling) if not isinstance(Gambling, dict) else Gambling
         isRefund = (Gambling['status'] == GamblingStatus.PENDING.value) # 如果尚未開始賭局，就可以退款
 
-        JoinRecord = self.GamblerRepository.findById(Gambling['id'], User['id'])
+        
 
         if (isRefund):
+            JoinRecord = self.GamblerRepository.findById(Gambling['id'], User['id'])
             description = f"{User['name']} 退出賭局，由於賭局尚未開始故返回下注金額 {Gambling['min_bet']} 元 - 參與賭局 (gambling_id: {Gambling['id']})"
             transfer_reason_id = self.TransferReasonRepository.create(TransferReasonType.BET, description)
             self.TransferRecordRepository.transfer(transfer_reason_id=transfer_reason_id, user_id=User['id'], amount=-int(Gambling['min_bet']), fee=0, note=description)
@@ -84,3 +85,14 @@ class GamblingService:
 
         # 標記參與賭局
         self.GamblerRepository.exit(user_id=User['id'], gambling_id=Gambling['id'])
+
+    def getGambler(self, User: dict, Gambling: dict | int) -> dict:
+        """
+        取得參與賭局的使用者資訊
+
+        :param User: 使用者資訊 (users table)
+        :param Gambling: 賭局資訊 (gambling table)
+        :return: gambler.id
+        """
+        Gambling = self.GamblerRepository.findById(Gambling) if not isinstance(Gambling, dict) else Gambling
+        return self.GamblerRepository.get(Gambling['id'], User['id'])
