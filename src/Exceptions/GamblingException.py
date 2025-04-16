@@ -10,6 +10,15 @@ class GamblingException(app_commands.CheckFailure):
         self.message = message
 
     @staticmethod
+    def SELF_HOSTED():
+        """
+        當前用戶無法參加自己的賭局
+
+        :return: GamblingException
+        """
+        return GamblingException("您目前無法使用功能，由於：\n**這是您自己的賭局！**")
+
+    @staticmethod
     def NOT_HOSTED():
         """
         當前用戶並未主持任何賭局
