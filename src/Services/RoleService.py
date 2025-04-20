@@ -29,6 +29,7 @@ class RoleService:
     def checkBanned(boolean: bool = False):
         """
         檢查是否擁有懲罰性身份組
+
         :param boolean: True 代表允許懲罰性身份組，False 代表禁止懲罰性身份組
         :raise RoleException: 如果不符合條件則拋出異常
         """
