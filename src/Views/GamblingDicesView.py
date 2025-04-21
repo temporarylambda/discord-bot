@@ -32,19 +32,17 @@ class GamblingDicesView(discord.ui.View):
         self.embed.description += "5. 當遊戲結算後，整個賭局的累計賭金將會發送給贏家。\n"
         self.embed.description += "6. 若有任何問題，請聯繫主持人或管理員。\n"
         
-        self.embed.add_field(name="主持人：", value=f"{self.Host['name']}", inline=True)
+        self.embed.add_field(name="主持人：", value=f"<@{self.Host['uuid']}>", inline=True)
         self.embed.add_field(name="參加賭金：", value=f"{self.amount} 元", inline=True)
         self.embed.add_field(name="賭局類型：", value="十八仔", inline=True)
 
         try:
             gamblers = []
             for _, user in self.players.items():
-                description  = f"- {user['name']}"
+                description  = f"- <@{user['uuid']}>"
                 if user['id'] in self.dices:
                     description += f" - 已擲骰： {self.dices[int(user['id'])]}，總和為 {sum(self.dices[int(user['id'])])} 點！"
                 gamblers.append(description)
-
-
 
             self.embed.add_field(name="目前參與者：", value="\n".join(gamblers), inline=False)
         except Exception as e:
