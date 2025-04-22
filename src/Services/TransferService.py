@@ -71,34 +71,14 @@ class TransferService:
             'final_price': amount - fee,
         }
 
-    # 轉帳
-    def transfer(self, FromUser, ToUser, amount):
-        transferFee = os.getenv("RULE_TRANSFER_FEE", 15)
-        reason = f"{FromUser['name']} 轉帳給 {ToUser['name']}，金額 {amount} 元，手續費 {transferFee} 元"
-        transfer_reason_id = self.TransferReasonRepository.createTransfer(reason=reason)
-
-        increaseAmount = int(amount)
-        decreesAmount  = int(amount) + int(transferFee)
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=FromUser['id'], amount=-decreesAmount, fee=transferFee, note=reason)
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=ToUser['id'], amount=increaseAmount, note=reason)
-        return {
-            'amount': amount,
-            'fee': transferFee,
-            'final_amount': amount,
-        };
-
     # 管理方撥款給指定成員
     def giveMoney(self, AdminUser, User, amount, note=None):
-        reason = note if note is not None else f"{AdminUser['name']} 給予 {User['name']} 金額 {amount} 元"
-        transfer_reason_id = self.TransferReasonRepository.createGive(reason=reason)
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=User['id'], amount=int(amount), fee=0, note=reason)
-        return;
-
-    # 管理方強制從指定成員扣款
-    def takeMoney(self, AdminUser: dict, User: dict, amount, note=None):
-        reason = note if note is not None else f"{AdminUser['name']} 扣除 {User['name']} 金額 {amount} 元"
-        transfer_reason_id = self.TransferReasonRepository.createTake(reason=reason)
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=User['id'], amount=-int(amount), fee=0, note=reason)
+        self.transfer(
+            ToUser=User,
+            FromUser=None,
+            amount=amount,
+            reason=note if note is not None else f"{AdminUser['name']} 給予 {User['name']} 金額 {amount} 元"
+        )
         return;
 
     # private method, 金額異動用
@@ -120,3 +100,61 @@ class TransferService:
     def _relation(self, transfer_reason_id, relation_type: TransferRelationType, relation_id: list = []):
         self.TransferReasonRepository.createRelation(transfer_reason_id, relation_type, relation_id)
         return;
+
+    def transfer(
+            self, 
+            ToUser: dict, 
+            FromUser: dict, 
+            amount: int, 
+            reason: str = None, 
+            fee: int = 0, 
+            relation_type: TransferRelationType = None, 
+            relation_id: list = []
+        ) -> dict:
+        """
+        產生轉帳紀錄
+
+        :param ToUser: 轉入對象, 如果是系統方，則給予 None
+        :type ToUser: dict or None
+        :param FromUser: 轉出對象, 如果是系統方，則給予 None
+        :type FromUser: dict or None
+        :param amount: 轉帳金額
+        :type amount: int
+        :param reason: 轉帳原因
+        :type reason: str
+        :param fee: 手續費
+        :type fee: int
+        :param relation_type: 轉帳關聯類型
+        :type relation_type: TransferRelationType
+        :param relation_id: 轉帳關聯ID
+        :type relation_id: list
+        :return dict
+        """
+
+        TransferReasonRepositoryObject = TransferReasonRepository()
+        TransferRecordRepositoryObject = TransferRecordRepository()
+        UserRepositoryObject = UserRepository()
+
+        toUserAmount        = int(amount) - int(fee)
+        fromUserAmount      = -int(amount)
+        ToUserId            = ToUser.get('id', None) if ToUser is not None else None
+        FromUserId          = FromUser.get('id', None) if FromUser is not None else None
+        transfer_reason_id  = TransferReasonRepositoryObject.createTransfer(reason=reason)
+
+        # 建立轉帳紀錄 - ToUser
+        TransferRecordRepositoryObject.create(transfer_reason_id, ToUserId, toUserAmount, note=reason)
+        UserRepositoryObject.increaseBalance(ToUserId, toUserAmount)
+
+        # 建立轉帳紀錄 - FromUser
+        TransferRecordRepositoryObject.create(transfer_reason_id, FromUserId, fromUserAmount, note=reason)
+        UserRepositoryObject.increaseBalance(FromUserId, fromUserAmount)
+
+        # 手續費
+        if (fee and int(fee) > 0):
+            TransferRecordRepositoryObject.create(transfer_reason_id, None, fee, reason)
+
+        # 設定關聯
+        if relation_type is not None and relation_id:
+            TransferReasonRepositoryObject.createRelation(transfer_reason_id, relation_type, relation_id)
+
+        return {'amount': int(amount), 'fee': int(fee), 'transfer_reason_id': transfer_reason_id};

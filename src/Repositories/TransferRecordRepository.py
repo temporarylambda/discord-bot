@@ -3,6 +3,18 @@ from Repositories.UserRepository import UserRepository
 
 class TransferRecordRepository:
     def create(self, transfer_reason_id, user_id, amount: int, note: str = None):
+        """
+        建立轉帳紀錄
+
+        :param transfer_reason_id: 轉帳原因ID
+        :param user_id: 使用者ID
+        :param amount: 金額
+        :type amount: int
+        :param note: 備註
+        :type note: str
+        :return: None
+        """
+
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)

@@ -11,6 +11,7 @@ class Bank(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
         self.transferFee = os.getenv("RULE_TRANSFER_FEE", 15)
+        self.TransferService = TransferService()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -39,8 +40,11 @@ class Bank(commands.GroupCog):
             await interaction.response.send_message(message, ephemeral=True)
             return
 
-        TransferServiceObject = TransferService()
-        transferResult = TransferServiceObject.transfer(FromUser=FromUser, ToUser=ToUser, amount=amount)
+        fee = os.getenv("RULE_TRANSFER_FEE", 15)
+        transferResult = self.TransferService.transfer(
+            FromUser=FromUser, ToUser=ToUser, amount=amount, fee=fee,
+            reason=f"{FromUser['name']} 轉帳給 {ToUser['name']}，金額 {amount} 元，手續費 {fee} 元"
+        )
 
         # 轉帳完畢後重新撈取一次最新的使用者資料（取得轉帳後餘額）
         FromUser = UserServiceObject.firstOrCreate(interaction.user)
@@ -52,7 +56,7 @@ class Bank(commands.GroupCog):
         message += f"轉帳人： {interaction.user.mention}\n"   
         message += f"金　額： {transferResult['amount']} 元\n"
         message += f"手續費： {transferResult['fee']} 元\n"
-        message += f"實　收： {transferResult['final_amount']} 元\n"
+        message += f"實　收： {transferResult['amount']} 元\n"
         message += f"餘　額： {ToUser['balance']} 元\n"
         await UserService.sendMessage(self.bot, interaction.guild.id, ToUser['uuid'], message)
 
@@ -62,7 +66,7 @@ class Bank(commands.GroupCog):
         message += f"收受人： <@{ToUser['uuid']}>\n"   
         message += f"金　額： {transferResult['amount']} 元\n"
         message += f"手續費： {transferResult['fee']} 元\n"
-        message += f"實　收： {transferResult['final_amount']} 元\n"
+        message += f"實　付： {transferResult['fee'] + transferResult['amount']} 元\n"
         message += f"餘　額： {FromUser['balance']} 元\n"
         await UserService.sendMessage(self.bot, interaction.guild.id, FromUser['uuid'], message)
         await interaction.response.send_message(f"{interaction.user.mention} 已經轉帳給 {member.mention} {amount} 元！", ephemeral=True)

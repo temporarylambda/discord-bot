@@ -64,6 +64,9 @@ class UserRepository:
 
     # 異動金額用
     def increaseBalance(self, user_id, amount):
+        if user_id is None:
+            return;
+
         currentTimestamp = DatabaseConnection.getCurrentTimestamp();
         connection = DatabaseConnection.connect();
         cursor = DatabaseConnection.cursor(connection);

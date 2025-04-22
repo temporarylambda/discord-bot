@@ -13,6 +13,8 @@ from Views.PaginationView import PaginationView
 class Manager(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
+        self.UserService = UserService()
+        self.TransferService = TransferService()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -24,12 +26,14 @@ class Manager(commands.GroupCog):
     @RoleService.checkBanned(False)
     @RoleService.checkManager(True)
     async def giveMoney(self, interaction: discord.Interaction, user: discord.Member, amount: int, note: str = None):
-        UserServiceObject = UserService()
-        AdminUser   = UserServiceObject.firstOrCreate(interaction.user)
-        ToUser      = UserServiceObject.firstOrCreate(user)
-
-        TransferServiceObject = TransferService()
-        TransferServiceObject.giveMoney(AdminUser, ToUser, amount, note)
+        AdminUser = self.UserService.firstOrCreate(interaction.user)
+        ToUser    = self.UserService.firstOrCreate(user)
+        self.TransferService.transfer(
+            ToUser=ToUser,
+            FromUser=None,
+            amount=amount,
+            reason=note if note is not None else f"{AdminUser['name']} 給予 {ToUser['name']} 金額 {amount} 元"
+        )
 
         embed = discord.Embed(title="管理方操作", description="金額發放", color=Colour.gold())
         embed.add_field(name="發放對象", value=ToUser['name'], inline=False)
@@ -40,7 +44,7 @@ class Manager(commands.GroupCog):
         embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
 
         # 取得發放金額後的最新狀態
-        ToUser = UserServiceObject.firstOrCreate(user)
+        ToUser = self.UserService.firstOrCreate(user)
         message =  "====================================\n"
         message += "管理方操作 - 金額發放\n"
         message += "====================================\n"
@@ -58,15 +62,17 @@ class Manager(commands.GroupCog):
     @RoleService.checkBanned(False)
     @RoleService.checkManager(True)
     async def takeMoney(self, interaction: discord.Interaction, user: discord.Member, amount: int, note: str = None):
-        UserServiceObject = UserService()
-        AdminUser   = UserServiceObject.firstOrCreate(interaction.user)
-        ToUser      = UserServiceObject.firstOrCreate(user)
-
-        TransferServiceObject = TransferService()
-        TransferServiceObject.takeMoney(AdminUser, ToUser, amount, note)
+        AdminUser = self.UserService.firstOrCreate(interaction.user)
+        FromUser  = self.UserService.firstOrCreate(user)
+        self.TransferService.transfer(
+            ToUser=None,
+            FromUser=FromUser,
+            amount=amount,
+            reason=note if note is not None else f"{AdminUser['name']} 扣除 {FromUser['name']} 金額 {amount} 元"
+        )
 
         embed = discord.Embed(title="管理方操作", description="金額扣除", color=Colour.gold())
-        embed.add_field(name="扣除對象", value=ToUser['name'], inline=False)
+        embed.add_field(name="扣除對象", value=FromUser['name'], inline=False)
         embed.add_field(name="扣除金額", value=f"{amount} 元", inline=False)
         if note is not None:
             embed.add_field(name="備註", value=note, inline=False)
@@ -74,16 +80,16 @@ class Manager(commands.GroupCog):
         embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
 
         # 取得發放金額後的最新狀態
-        ToUser = UserServiceObject.firstOrCreate(user)
+        FromUser = self.UserService.firstOrCreate(user)
         message =  "====================================\n"
         message += "管理方操作 - 金額扣除\n"
         message += "====================================\n"
         message += f"發放人： {interaction.user.mention}\n"   
         message += f"金　額： {amount} 元\n"
         message += f"備　註： {note} \n" if note is not None else ""
-        message += f"餘　額： {ToUser['balance']} 元\n"
+        message += f"餘　額： {FromUser['balance']} 元\n"
         message += f"-# （若有疑慮，請操作客服單取向管理員聯繫）"
-        await UserService.sendMessage(self.bot, interaction.guild.id, ToUser['uuid'], message)
+        await UserService.sendMessage(self.bot, interaction.guild.id, FromUser['uuid'], message)
         await interaction.response.send_message(embed=embed)
 
     # 上架任務
