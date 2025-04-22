@@ -9,6 +9,7 @@ from Services.TopicService import TopicService
 from Services.MerchandiseService import MerchandiseService
 from Enums.MerchandiseSystemType import MerchandiseSystemType
 from Views.PaginationView import PaginationView
+from Enums.TransferReasonType import TransferReasonType
 
 class Manager(commands.GroupCog):
     def __init__(self, bot):
@@ -32,7 +33,8 @@ class Manager(commands.GroupCog):
             ToUser=ToUser,
             FromUser=None,
             amount=amount,
-            reason=note if note is not None else f"{AdminUser['name']} 給予 {ToUser['name']} 金額 {amount} 元"
+            reason=note if note is not None else f"{AdminUser['name']} 給予 {ToUser['name']} 金額 {amount} 元",
+            transfer_type=TransferReasonType.GIVE
         )
 
         embed = discord.Embed(title="管理方操作", description="金額發放", color=Colour.gold())
@@ -68,7 +70,8 @@ class Manager(commands.GroupCog):
             ToUser=None,
             FromUser=FromUser,
             amount=amount,
-            reason=note if note is not None else f"{AdminUser['name']} 扣除 {FromUser['name']} 金額 {amount} 元"
+            reason=note if note is not None else f"{AdminUser['name']} 扣除 {FromUser['name']} 金額 {amount} 元",
+            transfer_type=TransferReasonType.TAKE
         )
 
         embed = discord.Embed(title="管理方操作", description="金額扣除", color=Colour.gold())

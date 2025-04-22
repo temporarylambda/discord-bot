@@ -31,7 +31,7 @@ class TransferRecordRepository:
         connection.commit()
         return cursor.lastrowid
 
-    def transfer(self, transfer_reason_id, user_id, amount: int, fee: int =0, note=None):
+    def transfer(self, transfer_reason_id, user_id, amount: int, fee: int = 0, note=None):
         """
         轉帳紀錄
 

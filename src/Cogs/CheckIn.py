@@ -8,6 +8,8 @@ from Services.TopicService import TopicService
 from Views.DropdownView import DropdownView
 from Services.TransferService import TransferService
 from Services.RoleService import RoleService
+from Enums.TransferRelationType import TransferRelationType
+from Enums.TransferReasonType import TransferReasonType
 
 async def tasksReportCallback(Button: discord.ui.Button, interaction: discord.Interaction):
     Button.disabled = True
@@ -38,10 +40,26 @@ async def tasksReportCallback(Button: discord.ui.Button, interaction: discord.In
     # 獎勵金發放
     reward = 0
     TransferServiceObject = TransferService()
-    for currentTopic in currentTopics:
-        if (str(currentTopic['id']) in selected_values and currentTopic['reward'] is not None and int(currentTopic['reward']) > 0):
-            reward += int(currentTopic['reward'])
-            TransferServiceObject.giveCheckInReward(currentTopic['id'], User, int(currentTopic['reward']))
+
+    try:
+        for currentTopic in currentTopics:
+            if (str(currentTopic['id']) in selected_values and currentTopic['reward'] is not None and int(currentTopic['reward']) > 0):
+                reward += int(currentTopic['reward'])
+                TransferServiceObject.transfer(
+                    ToUser=User,
+                    FromUser=None,
+                    amount=int(currentTopic['reward']),
+                    reason=f"{User['name']} 簽到獎勵 (DailyCheckInTopicId: {currentTopic['id']})，金額 {currentTopic['reward']} 元",
+                    transfer_type=TransferReasonType.CHECK_IN,
+                    relation_dict=[
+                        {
+                            'type': TransferRelationType.DAILY_CHECK_IN_TOPIC,
+                            'id': [currentTopic['id']]
+                        }
+                    ]
+                )
+    except Exception as e:
+        print(f" |---- 簽到獎勵發放失敗！\n{e}")
     
     await interaction.response.edit_message(content=f"{interaction.user.mention} 回報成功囉！\n您的獎勵也已經發放到您的帳戶了，共計 {reward} 元！", view=None)
 

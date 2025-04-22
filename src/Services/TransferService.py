@@ -6,34 +6,13 @@ from Repositories.UserInventoryRepository import UserInventoryRepository
 from Repositories.DailyCheckInTopicRepository import DailyCheckInTopicRepository
 from Enums.TransferRelationType import TransferRelationType
 from Enums.MerchandiseSystemType import MerchandiseSystemType
+from Enums.TransferReasonType import TransferReasonType
+
 class TransferService:
-    def __init__(self):
-        self.TransferReasonRepository = TransferReasonRepository();
-        self.TransferRecordRepository = TransferRecordRepository();
-        self.DailyCheckInTopicRepository = DailyCheckInTopicRepository();
-        self.UserRepository = UserRepository();
-
-    # 給予簽到獎勵
-    def giveCheckInReward(self, daily_check_in_topic_id, user, amount, note=None):
-        if (amount is None or int(amount) <= 0):
-            return
-
-        reason = f"{user['name']} 簽到獎勵 (DailyCheckInTopicId: {daily_check_in_topic_id})，金額 {amount} 元"
-        transfer_reason_id = self.TransferReasonRepository.createCheckIn(reason=reason)
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=user['id'], amount=int(amount), fee=0, note=reason)
-        self._relation(transfer_reason_id, TransferRelationType.DAILY_CHECK_IN_TOPIC, [daily_check_in_topic_id])
-        return;
-
     # 購買商品
     def buyMerchandise(self, from_user, to_user, merchandise, quantity=1):
         amount = int(merchandise['price']) * int(quantity)
         to_user_name = to_user['name'] if to_user is not None else "系統"
-        reason = f"{from_user['name']} 購買商品 ID: {merchandise['id']}, {merchandise['name']} (by {to_user_name}) {quantity} 個，金額 {amount} 元"
-        transfer_reason_id = self.TransferReasonRepository.createMerchandise(reason=reason)
-
-        # 扣款不需要手續費
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=from_user['id'], amount=-amount, fee=0, note=reason)
-        self._relation(transfer_reason_id, TransferRelationType.MERCHANDISE, [merchandise['id']])
 
         # 存入商品到使用者的背包
         inventoryIds = []
@@ -41,29 +20,49 @@ class TransferService:
             UserInventoryRepositoryObject = UserInventoryRepository()
             inventoryIds.append(UserInventoryRepositoryObject.addMerchandise(from_user['id'], merchandise))
 
-        # 建立關聯
-        self._relation(transfer_reason_id, TransferRelationType.INVENTORY, inventoryIds)
-        return;
+        # 扣款
+        self.transfer(
+            FromUser=from_user,
+            ToUser=None,
+            amount=amount,
+            reason=f"{from_user['name']} 購買商品 ID: {merchandise['id']}, {merchandise['name']} (by {to_user_name}) {quantity} 個，金額 {amount} 元",
+            transfer_type=TransferReasonType.MERCHANDISE,
+            relation_dict=[
+                {
+                    'type': TransferRelationType.MERCHANDISE,
+                    'id': [merchandise['id']]
+                },
+                {
+                    'type': TransferRelationType.INVENTORY,
+                    'id': inventoryIds
+                }
+            ]
+        )
+        return
 
     # 兌換商品 - 如果兌換的商品是任務刷新卷，則需要傳入 dailyCheckInTopicIds, 並將這些題目標記為已跳過
     def redeemMerchandise(self, User, Inventory, dailyCheckInTopicIds: list = []):
         amount = int(Inventory['price'])
         fee = int(amount * float(os.getenv("RULE_MERCHANDISE_TRADE_FEE", 0.2)))
-
         to_user_name = Inventory['merchant_name'] if Inventory['merchant_name'] is not None else "系統"
-        reason = f"{User['name']} 兌換商品 ID: {Inventory['merchandise_id']}, {Inventory['name']} (by {to_user_name}) 1 個，原價 {Inventory['price']} 元，手續費 {fee} 元，實際兌換金額 {amount} 元"
-        transfer_reason_id = self.TransferReasonRepository.createRedeem(reason=reason)
-        self._transfer(transfer_reason_id=transfer_reason_id, user_id=Inventory['merchant_id'], amount=amount-fee, fee=fee, note=reason)
-        self._relation(transfer_reason_id, TransferRelationType.INVENTORY, [Inventory['id']])
+        relation_dict = [{'type': TransferRelationType.INVENTORY, 'id': [Inventory['id']]}]
 
-        # 任務刷新卷
+         # 任務刷新卷
+        DailyCheckInTopicRepositoryObject = DailyCheckInTopicRepository()
         if Inventory['system_type'] == MerchandiseSystemType.SYSTEM_CHECK_IN_REFRESH.value:
-            # 紀錄關聯的 Topic Ids
-            self._relation(transfer_reason_id, TransferRelationType.DAILY_CHECK_IN_TOPIC, dailyCheckInTopicIds)
+            relation_dict.append({'type': TransferRelationType.DAILY_CHECK_IN_TOPIC, 'id': dailyCheckInTopicIds}) # 紀錄關聯的 Topic Ids
+            for daily_check_in_topic_id in dailyCheckInTopicIds: # 將這些題目標記為已跳過
+                DailyCheckInTopicRepositoryObject.skip(daily_check_in_topic_id)
 
-            # 將這些題目標記為已跳過
-            for daily_check_in_topic_id in dailyCheckInTopicIds:
-                self.DailyCheckInTopicRepository.skip(daily_check_in_topic_id);
+        self.transfer(
+            FromUser={'id': Inventory['merchant_id']},
+            ToUser=None,
+            amount=amount,
+            fee=int(amount * float(os.getenv("RULE_MERCHANDISE_TRADE_FEE", 0.2))),
+            reason=f"{User['name']} 兌換商品 ID: {Inventory['merchandise_id']}, {Inventory['name']} (by {to_user_name}) 1 個，原價 {Inventory['price']} 元，手續費 {fee} 元，實際兌換金額 {amount} 元",
+            transfer_type=TransferReasonType.REDEEM,
+            relation_dict=relation_dict
+        )
 
         return {
             'price': amount,
@@ -71,46 +70,18 @@ class TransferService:
             'final_price': amount - fee,
         }
 
-    # 管理方撥款給指定成員
-    def giveMoney(self, AdminUser, User, amount, note=None):
-        self.transfer(
-            ToUser=User,
-            FromUser=None,
-            amount=amount,
-            reason=note if note is not None else f"{AdminUser['name']} 給予 {User['name']} 金額 {amount} 元"
-        )
-        return;
-
-    # private method, 金額異動用
-    def _transfer(self, transfer_reason_id, user_id, amount: int, fee: int =0, note=None):
-        # 轉帳紀錄
-        self.TransferRecordRepository.create(transfer_reason_id, user_id if user_id is not None else None, amount, note)
-        
-        # 異動扣款對象餘額 - 如果 user_id 為 None，則代表是對系統方的計算，這情況下不需異動 users 餘額，因為沒有對應的 record
-        if user_id is not None:
-            self.UserRepository.increaseBalance(user_id, amount)
-
-        # 手續費 - 若有手續費，則認定由系統收走
-        if (fee and int(fee) > 0): 
-            self.TransferRecordRepository.create(transfer_reason_id, None, fee, note)
-
-        return;
-
-    # private method, 紀錄轉帳關聯
-    def _relation(self, transfer_reason_id, relation_type: TransferRelationType, relation_id: list = []):
-        self.TransferReasonRepository.createRelation(transfer_reason_id, relation_type, relation_id)
-        return;
-
     def transfer(
-            self, 
-            ToUser: dict, 
-            FromUser: dict, 
-            amount: int, 
-            reason: str = None, 
-            fee: int = 0, 
-            relation_type: TransferRelationType = None, 
-            relation_id: list = []
-        ) -> dict:
+        self, 
+        ToUser: dict, 
+        FromUser: dict, 
+        amount: int, 
+        reason: str = None, 
+        fee: int = 0, 
+        transfer_type: TransferReasonType = TransferReasonType.TRANSFER,
+        relation_dict: list = [],
+        relation_type: TransferRelationType = None, 
+        relation_id: list = []
+    ) -> dict:
         """
         產生轉帳紀錄
 
@@ -124,12 +95,25 @@ class TransferService:
         :type reason: str
         :param fee: 手續費
         :type fee: int
-        :param relation_type: 轉帳關聯類型
+        :param transfer_type: 轉帳類型
+        :type transfer_type: TransferReasonType
+        :param relation_dict: 轉帳關聯字典
+        :type relation_dict: list
+        :param relation_type: 轉帳關聯類型 - DEPRECATED, 請改用 relation_dict
         :type relation_type: TransferRelationType
-        :param relation_id: 轉帳關聯ID
+        :param relation_id: 轉帳關聯ID - DEPRECATED, 請改用 relation_dict
         :type relation_id: list
         :return dict
         """
+
+        relation_dict.append({
+            'type': relation_type,
+            'id': relation_id
+        })
+        
+        response = {'amount': int(amount), 'fee': int(fee), 'transfer_reason_id': None}
+        if (amount is None or int(amount) <= 0):
+            return response
 
         TransferReasonRepositoryObject = TransferReasonRepository()
         TransferRecordRepositoryObject = TransferRecordRepository()
@@ -139,7 +123,7 @@ class TransferService:
         fromUserAmount      = -int(amount)
         ToUserId            = ToUser.get('id', None) if ToUser is not None else None
         FromUserId          = FromUser.get('id', None) if FromUser is not None else None
-        transfer_reason_id  = TransferReasonRepositoryObject.createTransfer(reason=reason)
+        transfer_reason_id  = TransferReasonRepositoryObject.create(type=transfer_type, reason=reason)
 
         # 建立轉帳紀錄 - ToUser
         TransferRecordRepositoryObject.create(transfer_reason_id, ToUserId, toUserAmount, note=reason)
@@ -154,7 +138,9 @@ class TransferService:
             TransferRecordRepositoryObject.create(transfer_reason_id, None, fee, reason)
 
         # 設定關聯
-        if relation_type is not None and relation_id:
-            TransferReasonRepositoryObject.createRelation(transfer_reason_id, relation_type, relation_id)
+        for relation in relation_dict:
+            if relation.get('type') and relation.get('id'):
+                TransferReasonRepositoryObject.createRelation(transfer_reason_id, relation.get('type'), relation.get('id'))
 
-        return {'amount': int(amount), 'fee': int(fee), 'transfer_reason_id': transfer_reason_id};
+        response['transfer_reason_id'] = transfer_reason_id
+        return response
