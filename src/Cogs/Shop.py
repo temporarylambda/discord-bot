@@ -228,7 +228,7 @@ class Shop(commands.GroupCog):
     
         Merchandise = MerchandiseServiceObject.findById(merchandise_id)
         if (Merchandise is None or Merchandise['deleted_at'] is not None):
-            await interaction.response.send_message(content=f"{interaction.user.mention} 您查詢的商品不存在！")
+            await interaction.response.send_message(content=f"{interaction.user.mention} 您查詢的商品不存在！", ephemeral=True)
             return
         elif (str(Merchandise['uuid']) != str(interaction.user.id)):
             await interaction.response.send_message(content=f"{interaction.user.mention} 您無法下架別人的商品！", ephemeral=True)
