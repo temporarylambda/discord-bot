@@ -2,23 +2,50 @@ import discord
 import random
 from typing import Callable
 from Services.UserService import UserService
+from Services.GamblingService import GamblingService
+from Services.GamblerService import GamblerService
+from Enums.GamblingType import GamblingType
 
 class GamblingDicesView(discord.ui.View):
-    def __init__(self, bot, Host: dict, amount: int):
+    def __init__(self, bot, Host: dict, amount: int, diceEmojis: dict = None) -> None:
         super().__init__(timeout=None)
-        self.bot            = bot
-        self.Host           = Host
-        self.amount         = amount
-        self.embed          = None
-        self.players        = {
+        self.UserService = UserService();
+        self.GamblingService = GamblingService()
+        self.GamblerService = GamblerService()
+
+        # 機器人
+        self.bot                = bot
+
+        # 主持人 (users.*)
+        self.Host               = Host
+
+        # 賭局賭金
+        self.amount             = amount
+
+        # 骰字 Emoji
+        self.diceEmojis         = diceEmojis
+
+        # 是否有骰子 emoji
+        self.isHaveDiceEmoji    = (len(diceEmojis.items()) == 6)
+        
+        # 玩家資料
+        self.players            = {
             Host['id']: Host
         }
 
-        self.dices = {}
+        # 擲骰子結果
+        self.dices              = {}
 
-        self.UserService = UserService();
+        # 賭局資料
+        self.Gambling           = None
+
+        # embed 物件
+        self.embed              = None
+
+        # 更新第一次的 embed
         self.updateEmbed()
 
+    # 更新賭局資訊
     def updateEmbed(self: discord.ui.View) -> None:
         """
         更新賭局的說明文字
@@ -41,7 +68,8 @@ class GamblingDicesView(discord.ui.View):
             for _, user in self.players.items():
                 description  = f"- <@{user['uuid']}>"
                 if user['id'] in self.dices:
-                    description += f" - 已擲骰： {self.dices[int(user['id'])]}，總和為 {sum(self.dices[int(user['id'])])} 點！"
+                    diceEmojis = self.getDicesDisplay(self.dices[int(user['id'])])
+                    description += f" - 已擲骰： {diceEmojis}，總和為 {sum(self.dices[int(user['id'])])} 點！"
                 gamblers.append(description)
 
             self.embed.add_field(name="目前參與者：", value="\n".join(gamblers), inline=False)
@@ -62,6 +90,15 @@ class GamblingDicesView(discord.ui.View):
             return
         elif int(self.Host['balance']) < self.amount:
             await interaction.response.send_message(f"{interaction.user.mention} 抱歉！您的餘額不足，無法開啟賭局！", ephemeral=True)
+            return
+
+        try:
+            # 建立賭局
+            # self.Gambling = self.GamblingService.create(User=self.Host, min_bet=self.amount, max_bet=self.amount, type=GamblingType.DICES_EIGHTEEN)
+            pass
+        except Exception as e:
+            print(f"Error: {e}")
+            await interaction.response.send_message(f"發生錯誤：{e}", ephemeral=True)
             return
 
         await interaction.response.send_message(f"{interaction.user.mention} 開啟了一場賭局！", view=self, embed=self.embed)
@@ -153,9 +190,12 @@ class GamblingDicesView(discord.ui.View):
         dices = (random.randint(1, 6), random.randint(1, 6), random.randint(1, 6),)
         self.dices[User['id']] = dices
 
+        # 當有設定 emoji 時轉使用 emoji
+        diceEmojis = self.getDicesDisplay(dices)
+
         self.updateEmbed()
         await interaction.message.edit(embed=self.embed, view=self)
-        await interaction.response.send_message(f"{interaction.user.mention} 擲出了骰子： {dices}，總和為 {sum(dices)} 點！")
+        await interaction.response.send_message(f"{interaction.user.mention} 擲出了骰子： {diceEmojis}，總和為 {sum(dices)} 點！")
 
         try:
             if (len(self.dices) == len(self.players)):
@@ -180,8 +220,23 @@ class GamblingDicesView(discord.ui.View):
             if maxDicer is None or diceSum > maxDicer[1]:
                 maxDicer = (playerId, diceSum)
 
+        diceEmojis = self.getDicesDisplay(self.dices[maxDicer[0]])
         await interaction.message.edit(view=None)
-        await interaction.channel.send(content=f"遊戲結束！\n\n贏家是 <@{self.players[maxDicer[0]]['uuid']}>！\n擲出的骰子為 {self.dices[maxDicer[0]]}，總和為 {maxDicer[1]}！")
+        await interaction.channel.send(content=f"遊戲結束！\n\n贏家是 <@{self.players[maxDicer[0]]['uuid']}>！\n擲出的骰子為 {diceEmojis}，總和為 {maxDicer[1]}！")
 
+    # 取得骰子輸出結果
+    def getDicesDisplay(self: discord.ui.View, dices: list) -> list:
+        """
+        取得骰子顯示字串
 
+        :param dices: 骰子列表
+        :type dices: list
+        :return: list
+        """
+
+        diceEmojis = [str(dice) for dice in dices]
+        if self.isHaveDiceEmoji:
+            diceEmojis = [self.diceEmojis[dice] for dice in dices]
+        diceEmojis = ' '.join(map(str, diceEmojis))
+        return diceEmojis
 

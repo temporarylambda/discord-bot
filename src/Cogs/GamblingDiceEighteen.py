@@ -18,8 +18,12 @@ class GamblingDiceEighteen(commands.GroupCog, name="十八仔"):
     @app_commands.describe(amount='賭注金額')
     @RoleService.checkBanned(False)
     async def startGame(self, interaction: discord.Interaction, amount: int):
+        diceEmojis = {}
+        for i in range(1, 7):
+            diceEmojis[i] = discord.utils.get(interaction.guild.emojis, name=f"emoji_dice_{i}")
+
         User = self.UserService.firstOrCreate(interaction.user)
-        View = GamblingDicesView(self.bot, User, 0)
+        View = GamblingDicesView(self.bot, Host=User, amount=amount, diceEmojis=diceEmojis)
         await View.sendInvite(interaction)
 
 async def setup(bot):
