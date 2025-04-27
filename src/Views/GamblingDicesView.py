@@ -4,7 +4,9 @@ from typing import Callable
 from Services.UserService import UserService
 from Services.GamblingService import GamblingService
 from Services.GamblerService import GamblerService
+from Services.TransferService import TransferService
 from Enums.GamblingType import GamblingType
+from Enums.TransferReasonType import TransferReasonType
 
 class GamblingDicesView(discord.ui.View):
     def __init__(self, bot, Host: dict, amount: int, diceEmojis: dict = None) -> None:
@@ -12,6 +14,7 @@ class GamblingDicesView(discord.ui.View):
         self.UserService = UserService();
         self.GamblingService = GamblingService()
         self.GamblerService = GamblerService()
+        self.TransferService = TransferService()
 
         # 機器人
         self.bot                = bot
@@ -94,8 +97,29 @@ class GamblingDicesView(discord.ui.View):
 
         try:
             # 建立賭局
-            # self.Gambling = self.GamblingService.create(User=self.Host, min_bet=self.amount, max_bet=self.amount, type=GamblingType.DICES_EIGHTEEN)
-            pass
+            self.Gambling = self.GamblingService.create(User=self.Host, min_bet=self.amount, max_bet=self.amount, type=GamblingType.DICES_EIGHTEEN)
+
+            # 主持人加入賭局
+            self.GamblerService.join(Gambling=self.Gambling, User=self.Host)
+
+            # 設定主持人的賭金
+            self.GamblerService.raiseBet(Gambling=self.Gambling, User=self.Host, bet=self.amount)
+
+            # 轉帳從主持人的帳戶扣錢至系統帳號
+            self.TransferService.transfer(
+                FromUser=self.Host, 
+                ToUser=None, 
+                amount=self.amount, 
+                fee=0, 
+                reason=f"開啟賭局 - {self.Gambling['id']}", 
+                transfer_type=TransferReasonType.BET,
+                relation_dict=[
+                    {
+                        'type': 'GAMBLING',
+                        'id': self.Gambling['id']
+                    }
+                ]
+            )
         except Exception as e:
             print(f"Error: {e}")
             await interaction.response.send_message(f"發生錯誤：{e}", ephemeral=True)

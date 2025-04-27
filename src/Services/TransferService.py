@@ -78,9 +78,7 @@ class TransferService:
         reason: str = None, 
         fee: int = 0, 
         transfer_type: TransferReasonType = TransferReasonType.TRANSFER,
-        relation_dict: list = [],
-        relation_type: TransferRelationType = None, 
-        relation_id: list = []
+        relation_dict: list = []
     ) -> dict:
         """
         產生轉帳紀錄
@@ -105,12 +103,6 @@ class TransferService:
         :type relation_id: list
         :return dict
         """
-
-        relation_dict.append({
-            'type': relation_type,
-            'id': relation_id
-        })
-        
         response = {'amount': int(amount), 'fee': int(fee), 'transfer_reason_id': None}
         if (amount is None or int(amount) <= 0):
             return response

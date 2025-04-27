@@ -29,3 +29,18 @@ class GamblerService:
         :rtype: dict
         """
         return self.GamblerRepository.join(Gambling['id'], User['id'])
+    
+    def raiseBet(self, Gambling: dict, User: dict, bet: int) -> dict:
+        """
+        提高賭注金額
+
+        :param Gambling: 賭局
+        :type Gambling: dict
+        :param User: 使用者
+        :type User: dict
+        :param bet: 賭注金額
+        :type bet: int
+        :return: dict
+        :rtype: dict
+        """
+        return self.GamblerRepository.raiseBet(Gambling['id'], User['id'], bet)
