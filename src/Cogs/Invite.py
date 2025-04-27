@@ -39,7 +39,7 @@ class Invite(commands.GroupCog):
             max_age=int(INVITE_LIFE_TIME_HOUR) * 60 * 60,  # 七天（秒）
             max_uses=1,
             unique=True,
-            reason=f"由 {interaction.user} 使用指令產生 ({timestamp}) - {endtime.strftime('%Y-%m-%d %H:%M:%S')} 到期",
+            reason=f"由 {interaction.user.display_name} 使用指令產生 ({timestamp}) - {endtime.strftime('%Y-%m-%d %H:%M:%S')} 到期",
         )
 
         await interaction.response.send_message(f"{interaction.user.mention}\n🔗 這是你的邀請連結\n - {endtime.strftime('%Y-%m-%d %H:%M:%S')} 到期\n- 僅限一次使用：\n{invite.url}", ephemeral=True)
