@@ -46,7 +46,7 @@ class GamblingDicesView(discord.ui.View):
         self.embed              = None
 
         # 贏家資料
-        self.winner             = None
+        self.winners            = []
 
         # 排序方式
         self.sort_order         = sort_order
@@ -86,8 +86,11 @@ class GamblingDicesView(discord.ui.View):
         if (self.players):
             self.embed.add_field(name="賭金池", value=f"{len(self.players) * self.amount} 元", inline=False)
 
-        if (self.winner):
-            self.embed.add_field(name="贏家", value=f"<@{self.winner['uuid']}> - " + self.getDicesDisplay(self.dices[self.winner['id']]), inline=False)
+        if (self.winners):
+            value = ''
+            for winner in self.winners:
+                value += f"<@{winner['uuid']}> - " + self.getDicesDisplay(self.dices[winner['id']]) + "\n"
+            self.embed.add_field(name="贏家", value=value, inline=False)
 
         try:
             gamblers = []
@@ -273,7 +276,8 @@ class GamblingDicesView(discord.ui.View):
             await interaction.response.send_message("你已經擲過骰子了！", ephemeral=True)
             return
 
-        dices = (random.randint(1, 6), random.randint(1, 6), random.randint(1, 6),)
+        # dices = (random.randint(1, 6), random.randint(1, 6), random.randint(1, 6),)
+        dices = (3, 3, 3,)
         self.dices[User['id']] = dices
         self.GamblingDiceService.insertRollRecord(Gambling=self.Gambling, User=User, dices=dices)
 
@@ -301,20 +305,29 @@ class GamblingDicesView(discord.ui.View):
         :return: None
         """
         # 計算贏家
-        result = self.GamblingDiceService.ranking(Gambling=self.Gambling, sort_order=self.sort_order, limit=1)
-        player = self.players[result[0]['user_id']]
-        dices  = self.dices[result[0]['user_id']]
+        sums = {key: sum(values) for key, values in self.dices.items()}
+        max_sum = max(sums.values()) if self.sort_order == "DESC" else min(sums.values())
+        self.winners = [self.players[key] for key, total in sums.items() if total == max_sum]
 
-        self.winner = player
-        diceEmojis = self.getDicesDisplay(dices)
-
-        # 發送獎金
-        self.GamblerService.settle(Gambling=self.Gambling, User=player)
+        # # 發送獎金
+        self.GamblerService.settle(Gambling=self.Gambling, Users=self.winners)
         self.Gambling = self.GamblingService.finish(Gambling=self.Gambling)
         self.updateEmbed()
 
         await interaction.message.edit(embed=self.embed, view=None)
-        await interaction.followup.send(content=f"遊戲結束！\n\n贏家是 <@{player['uuid']}>！\n擲出的骰子為 {diceEmojis}，總和為 {sum(dices)}！\n\n恭喜獲得總賭金 {len(self.players) * self.amount} 元！\n\n-# 若有任何問題，請聯繫主持人或管理員！")
+        if (len(self.winners) == 1):
+            player = self.winners[0]
+            dices = self.dices[player['id']]
+            diceEmojis = self.getDicesDisplay(dices)
+            message = f"遊戲結束！\n\n贏家是 <@{player['uuid']}>！\n擲出的骰子為 {diceEmojis}，總和為 {sum(dices)}！\n\n恭喜獲得總賭金 {len(self.players) * self.amount} 元！\n\n-# 若有任何問題，請聯繫主持人或管理員！"
+        else: 
+            message = f"遊戲結束！\n\n由於有多位玩家總點數相同，所以共列贏家： \n"
+            for winner in self.winners:
+                message += f"<@{winner['uuid']}> - {self.getDicesDisplay(self.dices[winner['id']])}，總和為 {sum(self.dices[winner['id']])} 點！\n"
+            message += f"\n\n贏家們將均分總賭金 {len(self.players) * self.amount} 元！\n\n-# 若有任何問題，請聯繫主持人或管理員！"
+            
+        await interaction.followup.send(content=message)
+        return
 
     # 取得骰子輸出結果
     def getDicesDisplay(self: discord.ui.View, dices: list) -> list:

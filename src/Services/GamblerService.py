@@ -113,7 +113,7 @@ class GamblerService:
         """
         return self.GamblerRepository.start(Gambling['id'])
 
-    def settle(self, Gambling: dict, User: dict) -> None:
+    def settle(self, Gambling: dict, Users: list[dict]) -> None:
         """
         結算賭局結果
 
@@ -123,31 +123,31 @@ class GamblerService:
 
         :param Gambling: 賭局
         :type Gambling: dict
-        :param User: 贏家
-        :type User: dict
-        :return: dict
-        :rtype: dict
+        :param Users: 贏家
+        :type Users: list[dict]
+        :return: None
         """
 
         # 標記贏家
-        self.GamblerRepository.setWinner(Gambling['id'], User['id'])
+        user_ids = [User['id'] for User in Users]
+        self.GamblerRepository.setWinner(Gambling['id'], user_ids)
 
         # 取的賭局總金額
         totalBets = self.GamblerRepository.getTotalBets(Gambling['id'])
-
-        # 轉帳
-        self.TransferService.transfer(
-            FromUser=None, 
-            ToUser=User, 
-            amount=int(totalBets), 
-            fee=0, 
-            reason=f"賭局贏家 - 賭局編號: {Gambling['id']}", 
-            transfer_type=TransferReasonType.BET_WIN,
-            relation_dict=[
-                {
-                    'type': TransferRelationType.GAMBLING,
-                    'id': [Gambling['id']]
-                }
-            ]
-        )
+        for User in Users:
+            # 轉帳給贏家
+            self.TransferService.transfer(
+                FromUser=None, 
+                ToUser=User, 
+                amount=int(totalBets/len(Users)), # 如果有多位贏家，則平均分配賭金；如果賭金不該能被整除，那多給的錢就當作系統送的
+                fee=0, 
+                reason=f"賭局贏家 - 賭局編號: {Gambling['id']}", 
+                transfer_type=TransferReasonType.BET_WIN,
+                relation_dict=[
+                    {
+                        'type': TransferRelationType.GAMBLING,
+                        'id': [Gambling['id']]
+                    }
+                ]
+            )
         return

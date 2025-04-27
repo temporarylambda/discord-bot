@@ -140,32 +140,52 @@ class GamblerRepository:
         connection.commit()
         return
 
-    def setWinner(self, gambling_id, user_id) -> dict:
+    def setWinner(self, gambling_id, user_ids) -> None:
         """
         設定使用者為贏家
 
         :param gambling_id: 賭局 id
         :param user_id: 使用者 id
-        :return: dict
+        :return: None
         """
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
 
-        # 先將所有非指定贏家的參加者狀態設為輸家, 並把贏家標記成贏家
+        if user_ids:
+            # 先把指定的人標記成 WINNER
+            format_strings = ','.join(['%s'] * len(user_ids))
+            cursor.execute(
+                f"""
+                UPDATE gamblers
+                SET status = %s, updated_at = %s
+                WHERE gambling_id = %s AND status = %s AND user_id IN ({format_strings})
+                """,
+                (
+                    GamblerStatus.WINNER.value,
+                    currentTimestamp,
+                    gambling_id,
+                    GamblerStatus.IN_PROGRESS.value,
+                    *user_ids  # 展開 user_ids 進參數
+                )
+            )
+
+        # 把剩下的 IN_PROGRESS 全標成 LOSER
         cursor.execute(
-            "UPDATE gamblers SET status = IF(user_id = %s, %s, %s), updated_at = %s WHERE gambling_id = %s AND status = %s",
+            """
+            UPDATE gamblers
+            SET status = %s, updated_at = %s
+            WHERE gambling_id = %s AND status = %s
+            """,
             (
-                user_id,
-                GamblerStatus.WINNER.value,
                 GamblerStatus.LOSER.value,
-                currentTimestamp, 
-                gambling_id, 
+                currentTimestamp,
+                gambling_id,
                 GamblerStatus.IN_PROGRESS.value,
             )
         )
         connection.commit()
-        return self.get(gambling_id, user_id)
+        return
     
     def getTotalBets(self, gambling_id) -> int:
         """
