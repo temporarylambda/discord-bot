@@ -7,6 +7,8 @@ from Services.GamblerService import GamblerService
 from Services.TransferService import TransferService
 from Enums.GamblingType import GamblingType
 from Enums.TransferReasonType import TransferReasonType
+from Enums.TransferRelationType import TransferRelationType
+from Enums.GamblingStatus import GamblingStatus
 
 class GamblingDicesView(discord.ui.View):
     def __init__(self, bot, Host: dict, amount: int, diceEmojis: dict = None) -> None:
@@ -53,18 +55,31 @@ class GamblingDicesView(discord.ui.View):
         """
         更新賭局的說明文字
         """
-        self.embed = discord.Embed(title="十八仔 - 賭局開始！", description="", color=discord.Colour.blue())
-        self.embed.description = "操作方式：\n"
-        self.embed.description += "1. 點擊「加入賭局」按鈕來參加賭局，賭金將提前從戶頭中扣除。\n"
-        self.embed.description += "2. 當主持人確定要開始遊戲時，可以按下「開始遊戲」來開始遊戲。\n"
-        self.embed.description += "3. 開始遊戲後，參與者可以點擊「擲骰」按鈕來擲骰。\n"
-        self.embed.description += "4. 當所有參與者都擲完骰子後，將會自動進行結算。\n"
-        self.embed.description += "5. 當遊戲結算後，整個賭局的累計賭金將會發送給贏家。\n"
-        self.embed.description += "6. 若有任何問題，請聯繫主持人或管理員。\n"
-        
-        self.embed.add_field(name="主持人：", value=f"<@{self.Host['uuid']}>", inline=True)
-        self.embed.add_field(name="參加賭金：", value=f"{self.amount} 元", inline=True)
-        self.embed.add_field(name="賭局類型：", value="十八仔", inline=True)
+
+        # 賭局狀態文字更新
+        description  = "操作方式\n"
+        description += "1. 點擊「加入賭局」按鈕來參加賭局，賭金將提前從戶頭中扣除。\n"
+        description += "2. 當主持人確定要開始遊戲時，可以按下「開始遊戲」來開始遊戲。\n"
+        description += "3. 當玩家想在開始前離開遊戲，可以按下「退出賭局」來退出遊戲並得到賭金退回；如果是主持人退出，將退回所有人的賭金並將賭局結束。\n"
+        gamblingStatus = "歡迎參加賭局"
+        if (self.Gambling):
+            if (self.Gambling['status'] == GamblingStatus.IN_PROGRESS.value):
+                description += "1. 開始遊戲後，參與者可以點擊「擲骰」按鈕來擲骰。\n"
+                description += "2. 當所有參與者都擲完骰子後，將會自動進行結算。\n"
+                description += "3. 當遊戲結算後，整個賭局的累計賭金將會發送給贏家。\n"
+                gamblingStatus = "賭局進行中"
+            elif (self.Gambling['status'] == GamblingStatus.FINISHED.value or self.Gambling['status'] == GamblingStatus.CANCELED.value):
+                gamblingStatus = "賭局結束" if (self.Gambling['status'] == GamblingStatus.FINISHED.value) else "賭局取消"
+                description += "1. 遊戲已結束，無法再進行操作。\n"
+                description += "2. 若有任何問題，請聯繫主持人或管理員。\n"
+                self.clear_items()
+
+        self.embed = discord.Embed(title=f"十八仔 - {gamblingStatus}！", description=description, color=discord.Colour.blue())
+        if (self.Gambling):
+            self.embed.add_field(name="賭局編號", value=f"{self.Gambling['id']}", inline=True)
+            self.embed.add_field(name="賭局狀態", value=f"{gamblingStatus}", inline=True)
+        if (self.players):
+            self.embed.add_field(name="賭金池", value=f"{len(self.players) * self.amount} 元", inline=True)
 
         try:
             gamblers = []
@@ -75,7 +90,10 @@ class GamblingDicesView(discord.ui.View):
                     description += f" - 已擲骰： {diceEmojis}，總和為 {sum(self.dices[int(user['id'])])} 點！"
                 gamblers.append(description)
 
-            self.embed.add_field(name="目前參與者：", value="\n".join(gamblers), inline=False)
+            if len(gamblers) == 0:
+                self.embed.add_field(name="目前參與者", value="目前沒有參與者", inline=False)
+            else:
+                self.embed.add_field(name="目前參與者", value="\n".join(gamblers), inline=False)
         except Exception as e:
             print(f"Error: {e}")
 
@@ -95,36 +113,32 @@ class GamblingDicesView(discord.ui.View):
             await interaction.response.send_message(f"{interaction.user.mention} 抱歉！您的餘額不足，無法開啟賭局！", ephemeral=True)
             return
 
-        try:
-            # 建立賭局
-            self.Gambling = self.GamblingService.create(User=self.Host, min_bet=self.amount, max_bet=self.amount, type=GamblingType.DICES_EIGHTEEN)
+        # 建立賭局
+        self.Gambling = self.GamblingService.create(User=self.Host, min_bet=self.amount, max_bet=self.amount, type=GamblingType.DICES_EIGHTEEN)
 
-            # 主持人加入賭局
-            self.GamblerService.join(Gambling=self.Gambling, User=self.Host)
+        # 主持人加入賭局
+        self.GamblerService.join(Gambling=self.Gambling, User=self.Host)
 
-            # 設定主持人的賭金
-            self.GamblerService.raiseBet(Gambling=self.Gambling, User=self.Host, bet=self.amount)
+        # 設定主持人的賭金
+        self.GamblerService.raiseBet(Gambling=self.Gambling, User=self.Host, bet=self.amount)
 
-            # 轉帳從主持人的帳戶扣錢至系統帳號
-            self.TransferService.transfer(
-                FromUser=self.Host, 
-                ToUser=None, 
-                amount=self.amount, 
-                fee=0, 
-                reason=f"開啟賭局 - {self.Gambling['id']}", 
-                transfer_type=TransferReasonType.BET,
-                relation_dict=[
-                    {
-                        'type': 'GAMBLING',
-                        'id': self.Gambling['id']
-                    }
-                ]
-            )
-        except Exception as e:
-            print(f"Error: {e}")
-            await interaction.response.send_message(f"發生錯誤：{e}", ephemeral=True)
-            return
+        # 轉帳從主持人的帳戶扣錢至系統帳號
+        self.TransferService.transfer(
+            FromUser=self.Host, 
+            ToUser=None, 
+            amount=self.amount, 
+            fee=0, 
+            reason=f"開啟賭局 - 賭局編號: {self.Gambling['id']}", 
+            transfer_type=TransferReasonType.BET_IN,
+            relation_dict=[
+                {
+                    'type': TransferRelationType.GAMBLING,
+                    'id': [self.Gambling['id']]
+                }
+            ]
+        )
 
+        self.updateEmbed()
         await interaction.response.send_message(f"{interaction.user.mention} 開啟了一場賭局！", view=self, embed=self.embed)
 
     # 加入賭局按鈕
@@ -187,6 +201,62 @@ class GamblingDicesView(discord.ui.View):
             # self.add_item(self.SettleButton(view=self)) # TODO
 
             await interaction.response.edit_message(content="賭局開始！請各位參與者依序擲骰！", view=self)
+        except Exception as e:
+            print(f"Error: {e}")
+            await interaction.response.send_message(f"發生錯誤：{e}", ephemeral=True)
+            return
+
+    @discord.ui.button(label="退出賭局", style=discord.ButtonStyle.danger, custom_id="exit_game")
+    async def exit_game(self: discord.ui.View, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        User = self.UserService.firstOrCreate(interaction.user)
+        if User['id'] not in self.players:
+            await interaction.response.send_message("你並沒有加入這場賭局！", ephemeral=True)
+            return
+
+        try:
+            delPlayerIds = [];
+            isHostLeave = (User['id'] == self.Host['id'])
+            for playerId, player in self.players.items():
+                # 判斷是否有需要退款 - 如果是主持人離開或是玩家
+                if isHostLeave or playerId == User['id']:
+                    # 退款
+                    reason  = "退款 - "
+                    reason += "主持人離開" if isHostLeave else "玩家退出"
+                    reason += f" - 賭局編號: {self.Gambling['id']}"
+                    self.TransferService.transfer(
+                        FromUser=None, 
+                        ToUser=player, 
+                        amount=self.amount, 
+                        fee=0, 
+                        reason=reason, 
+                        transfer_type=TransferReasonType.BET_FOUND,
+                        relation_dict=[
+                            {
+                                'type': TransferRelationType.GAMBLING,
+                                'id': [self.Gambling['id']]
+                            }
+                        ]
+                    )
+                    delPlayerIds.append(playerId)
+            
+            # 刪除玩家資料
+            for playerId in delPlayerIds:
+                if playerId in self.players:
+                    del self.players[playerId]
+                if playerId in self.dices:
+                    del self.dices[playerId]
+
+            # 如果沒有玩家了，則結束賭局
+            if len(self.players) == 0:
+                self.Gambling = self.GamblingService.cancel(self.Gambling)
+
+            # 更新嵌入訊息
+            self.updateEmbed()
+            await interaction.response.edit_message(embed=self.embed, view=self)
+            if (isHostLeave):
+                await interaction.channel.send(content=f"賭局已取消！\n\n主持人 <@{self.Host['uuid']}> 已經離開賭局，所有參與者的賭金將會退回！")
+            else:
+                await interaction.channel.send(content=f"<@{User['uuid']}> 退出了 <@{self.Host['uuid']}> 的賭局(id: {self.Gambling['id']})，他的賭金將會從賭金池中退回到他的戶頭！")
         except Exception as e:
             print(f"Error: {e}")
             await interaction.response.send_message(f"發生錯誤：{e}", ephemeral=True)

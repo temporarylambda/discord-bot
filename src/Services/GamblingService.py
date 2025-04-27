@@ -26,3 +26,36 @@ class GamblingService:
             max_bet=max_bet, 
             type=type
         )
+
+    def start(self, Gambling: dict) -> dict:
+        """
+        開始賭局
+
+        :param Gambling: 賭局資料
+        :type Gambling: dict
+        :return: dict
+        :rtype: dict
+        """
+        return self.GamblingRepository.start(Gambling['id'])
+    
+    def cancel(self, Gambling: dict) -> dict:
+        """
+        取消賭局
+
+        :param Gambling: 賭局資料
+        :type Gambling: dict
+        :return: dict
+        :rtype: dict
+        """
+        return self.GamblingRepository.cancel(Gambling['id'])
+    
+    def finish(self, Gambling: dict) -> dict:
+        """
+        結束賭局
+
+        :param Gambling: 賭局資料
+        :type Gambling: dict
+        :return: dict
+        :rtype: dict
+        """
+        return self.GamblingRepository.finish(Gambling['id'])

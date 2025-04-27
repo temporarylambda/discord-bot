@@ -1,6 +1,19 @@
 from Services.DatabaseConnection import DatabaseConnection
 from Enums.GamblerStatus import GamblerStatus
 class GamblerRepository:
+    def list(self, gambling_id) -> list:
+        """
+        取得賭局中的所有使用者資料
+
+        :param gambling_id: 賭局 id
+        :return: list
+        """
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+
+        cursor.execute("SELECT * FROM gamblers WHERE gambling_id = %s", (gambling_id,))
+        return cursor.fetchall()
+
     def get(self, gambling_id, user_id) -> dict: 
         """
         取得使用者在賭局中的資料
@@ -12,7 +25,7 @@ class GamblerRepository:
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
 
-        cursor.execute(f"SELECT * FROM gamblers WHERE gambling_id = ? AND user_id = ?", (gambling_id, user_id))
+        cursor.execute("SELECT * FROM gamblers WHERE gambling_id = %s AND user_id = %s", (gambling_id, user_id))
         return cursor.fetchone()
 
     def find(self, gambler_id) -> dict:
@@ -24,7 +37,7 @@ class GamblerRepository:
         """
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
-        cursor.execute(f"SELECT * FROM gamblers WHERE id = ?", (gambler_id))
+        cursor.execute("SELECT * FROM gamblers WHERE id = %s", (gambler_id, ))
         return cursor.fetchone()
 
     def join(self, gambling_id, user_id) -> dict:
@@ -39,8 +52,9 @@ class GamblerRepository:
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
         cursor.execute(
-            f"""
-                INSERT INTO gamblers (gambling_id, user_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?) 
+            """
+                INSERT INTO gamblers (gambling_id, user_id, status, created_at, updated_at) 
+                VALUES (%s, %s, %s, %s, %s) 
                 ON DUPLICATE KEY UPDATE id = id
             """,
             (
@@ -48,7 +62,7 @@ class GamblerRepository:
                 user_id, 
                 GamblerStatus.PENDING.value, 
                 currentTimestamp, 
-                currentTimestamp
+                currentTimestamp,
             )
         )
         connection.commit()
@@ -70,7 +84,7 @@ class GamblerRepository:
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
-        cursor.execute(f"UPDATE gamblers SET total_bets = total_bets + ?, updated_at = ? WHERE gambling_id = ? AND user_id = ?",
+        cursor.execute("UPDATE gamblers SET total_bets = total_bets + %s, updated_at = %s WHERE gambling_id = %s AND user_id = %s",
             (
                 bet,
                 currentTimestamp, 

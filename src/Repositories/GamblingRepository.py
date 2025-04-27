@@ -52,3 +52,56 @@ class GamblingRepository:
         connection.commit()
 
         return self.find(cursor.lastrowid)
+
+    def cancel(self, id: int) -> dict:
+        """
+        取消賭局
+
+        :param id: 賭局 ID
+        :type id: int
+        :return: dict
+        """
+        self.__updateStatus(id, GamblingStatus.CANCELED)
+        return self.find(id)
+    
+    def start(self, id: int) -> dict:
+        """
+        開始賭局
+
+        :param id: 賭局 ID
+        :type id: int
+        :return: dict
+        """
+        self.__updateStatus(id, GamblingStatus.IN_PROGRESS)
+        return self.find(id)
+    
+    def finish(self, id: int) -> dict:
+        """
+        結束賭局
+
+        :param id: 賭局 ID
+        :type id: int
+        :return: dict
+        """
+        self.__updateStatus(id, GamblingStatus.FINISHED)
+        return self.find(id)
+
+    def __updateStatus(self, id: int, status: GamblingStatus) -> dict:
+        """
+        更新賭局狀態
+
+        :param id: 賭局 ID
+        :type id: int
+        :param status: 賭局狀態
+        :type status: GamblingStatus
+        :return: dict
+        """
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp()
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        cursor.execute(
+            f"UPDATE gambling SET status = %s, updated_at = %s WHERE id = %s",
+            (status.value, currentTimestamp, id)
+        )
+        connection.commit()
+        return self.find(id)
