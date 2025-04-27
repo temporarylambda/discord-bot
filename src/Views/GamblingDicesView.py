@@ -276,8 +276,7 @@ class GamblingDicesView(discord.ui.View):
             await interaction.response.send_message("你已經擲過骰子了！", ephemeral=True)
             return
 
-        # dices = (random.randint(1, 6), random.randint(1, 6), random.randint(1, 6),)
-        dices = (3, 3, 3,)
+        dices = (random.randint(1, 6), random.randint(1, 6), random.randint(1, 6),)
         self.dices[User['id']] = dices
         self.GamblingDiceService.insertRollRecord(Gambling=self.Gambling, User=User, dices=dices)
 
