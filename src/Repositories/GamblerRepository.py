@@ -55,7 +55,7 @@ class GamblerRepository:
             """
                 INSERT INTO gamblers (gambling_id, user_id, status, created_at, updated_at) 
                 VALUES (%s, %s, %s, %s, %s) 
-                ON DUPLICATE KEY UPDATE id = id
+                ON DUPLICATE KEY UPDATE id = id, status = %s, total_bets = 0, updated_at = %s
             """,
             (
                 gambling_id, 
@@ -63,6 +63,8 @@ class GamblerRepository:
                 GamblerStatus.PENDING.value, 
                 currentTimestamp, 
                 currentTimestamp,
+                GamblerStatus.PENDING.value,
+                currentTimestamp
             )
         )
         connection.commit()
@@ -84,9 +86,31 @@ class GamblerRepository:
         currentTimestamp = DatabaseConnection.getCurrentTimestamp()
         connection = DatabaseConnection.connect()
         cursor = DatabaseConnection.cursor(connection)
-        cursor.execute("UPDATE gamblers SET total_bets = total_bets + %s, updated_at = %s WHERE gambling_id = %s AND user_id = %s",
+        cursor.execute("UPDATE gamblers SET total_bets = IFNULL(total_bets, 0) + %s, updated_at = %s WHERE gambling_id = %s AND user_id = %s",
             (
                 bet,
+                currentTimestamp, 
+                gambling_id, 
+                user_id,
+            )
+        )
+        connection.commit()
+        return self.get(gambling_id, user_id)
+    
+    def cancel(self, gambling_id, user_id) -> dict:
+        """
+        取消參加賭局
+
+        :param gambling_id: 賭局 id
+        :param user_id: 使用者 id
+        :return: dict
+        """
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp()
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        cursor.execute("UPDATE gamblers SET status = %s, updated_at = %s WHERE gambling_id = %s AND user_id = %s",
+            (
+                GamblerStatus.CANCELED.value,
                 currentTimestamp, 
                 gambling_id, 
                 user_id,

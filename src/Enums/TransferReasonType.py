@@ -22,7 +22,7 @@ class TransferReasonType(Enum):
     REDEEM = 'REDEEM'
 
     # 賭金退款
-    BET_FOUND = 'BET_FOUND'
+    BET_REFOUND = 'BET_REFOUND'
 
     # 賭金入注
     BET_IN = 'BET_IN'
