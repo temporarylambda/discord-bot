@@ -126,7 +126,12 @@ class GamblingDicesView(discord.ui.View):
         self.GamblerService.join(Gambling=self.Gambling, User=self.Host, bet=self.amount)
 
         self.updateEmbed()
-        await interaction.response.send_message(f"{interaction.user.mention} 開啟了一場賭局！", view=self, embed=self.embed)
+        
+        file = discord.File("resource/images/gambling/welcome-gambling.png", filename="welcome-gambling.png")
+        embed = discord.Embed()
+        embed.set_image(url="attachment://welcome-gambling.png")
+        await interaction.response.send_message(file=file, embed=embed)
+        await interaction.followup.send(f"{interaction.user.mention} 開啟了一場賭局！", view=self, embed=self.embed)
 
     # 加入賭局按鈕
     @discord.ui.button(label="加入賭局", style=discord.ButtonStyle.primary, custom_id="join_game")
