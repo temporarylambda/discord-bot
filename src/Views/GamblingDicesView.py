@@ -3,6 +3,7 @@ import random
 from typing import Callable
 from Services.UserService import UserService
 from Services.GamblingService import GamblingService
+from Services.GamblingDiceService import GamblingDiceService
 from Services.GamblerService import GamblerService
 from Enums.GamblingType import GamblingType
 from Enums.GamblingStatus import GamblingStatus
@@ -13,6 +14,7 @@ class GamblingDicesView(discord.ui.View):
         self.UserService = UserService();
         self.GamblingService = GamblingService()
         self.GamblerService = GamblerService()
+        self.GamblingDiceService = GamblingDiceService()
 
         # 機器人
         self.bot                = bot
@@ -250,6 +252,7 @@ class GamblingDicesView(discord.ui.View):
 
         dices = (random.randint(1, 6), random.randint(1, 6), random.randint(1, 6),)
         self.dices[User['id']] = dices
+        self.GamblingDiceService.insertRollRecord(Gambling=self.Gambling, User=User, dices=dices)
 
         # 當有設定 emoji 時轉使用 emoji
         diceEmojis = self.getDicesDisplay(dices)
