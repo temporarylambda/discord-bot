@@ -1,6 +1,11 @@
 # 使用 Python 3.10 作為基礎映像
 FROM python:3.10
 
+# 安裝 mysql-client 
+RUN apt-get update && \ 
+    apt-get install -y default-mysql-client && \ 
+    rm -rf /var/lib/apt/lists/*
+
 # 設定工作目錄
 WORKDIR /bot
 

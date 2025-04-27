@@ -4,13 +4,20 @@ services:
     container_name: discord-bot
     restart: always
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     env_file:
       - .env
     volumes:
       - ./src:/bot
-    command: /bin/bash -c "alembic upgrade head && python watcher.py"
+    command: >
+      /bin/bash -c "
+        until mysqladmin ping -h db -u${MYSQL_USER} -p${MYSQL_PASSWORD} --silent; do
+          echo 'Waiting for database...';
+          sleep 2;
+        done;
+        alembic upgrade head && python watcher.py
+      "
+
 
 
   db:
