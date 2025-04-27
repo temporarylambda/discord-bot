@@ -57,3 +57,31 @@ class GamblingDiceRepository:
             connection.commit()
         
         return
+    
+    def ranking(self, gambling_id: int, limit: int = 1, sort_order: str = "DESC") -> list:
+        """
+        取得該賭局的最大擲骰紀錄
+
+        :param gambling_id: 賭局 ID
+        :type gambling_id: int
+        :param limit: 取出排名前幾名
+        :type limit: int
+        :return: 擲骰紀錄列表
+        :rtype: list
+        """
+        sort_order = "ASC" if sort_order == "ASC" else "DESC"
+
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        cursor.execute(
+            f"""
+                SELECT gambling_id, user_id, SUM(dice) as sum_dices 
+                FROM gambling_dices 
+                WHERE gambling_id = %s 
+                GROUP BY gambling_id, user_id 
+                ORDER BY sum_dices {sort_order} 
+                LIMIT %s
+            """,
+            (gambling_id, limit)
+        )
+        return cursor.fetchall()

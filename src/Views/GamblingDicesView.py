@@ -9,7 +9,7 @@ from Enums.GamblingType import GamblingType
 from Enums.GamblingStatus import GamblingStatus
 
 class GamblingDicesView(discord.ui.View):
-    def __init__(self, bot, Host: dict, amount: int, diceEmojis: dict = None) -> None:
+    def __init__(self, bot, Host: dict, amount: int, diceEmojis: dict = None, sort_order: str = "DESC") -> None:
         super().__init__(timeout=None)
         self.UserService = UserService();
         self.GamblingService = GamblingService()
@@ -44,6 +44,9 @@ class GamblingDicesView(discord.ui.View):
 
         # embed 物件
         self.embed              = None
+
+        # 排序方式
+        self.sort_order         = sort_order
 
     # 更新賭局資訊
     def updateEmbed(self: discord.ui.View) -> None:
@@ -284,9 +287,13 @@ class GamblingDicesView(discord.ui.View):
             if maxDicer is None or diceSum > maxDicer[1]:
                 maxDicer = (playerId, diceSum)
 
-        diceEmojis = self.getDicesDisplay(self.dices[maxDicer[0]])
+        result = self.GamblingDiceService.ranking(Gambling=self.Gambling, sort_order=self.sort_order, limit=1)
+        player = self.players[result[0]['user_id']]
+        dices  = self.dices[result[0]['user_id']]
+
+        diceEmojis = self.getDicesDisplay(dices)
         await interaction.message.edit(view=None)
-        await interaction.channel.send(content=f"遊戲結束！\n\n贏家是 <@{self.players[maxDicer[0]]['uuid']}>！\n擲出的骰子為 {diceEmojis}，總和為 {maxDicer[1]}！")
+        await interaction.channel.send(content=f"遊戲結束！\n\n贏家是 <@{player['uuid']}>！\n擲出的骰子為 {diceEmojis}，總和為 {sum(dices)}！")
 
     # 取得骰子輸出結果
     def getDicesDisplay(self: discord.ui.View, dices: list) -> list:
