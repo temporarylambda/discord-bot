@@ -21,6 +21,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    op.drop_index(
+        'gambling_id',
+        table_name='gambling_dices_eighteen',
+    )
+
+    # 重新建立 gambling_dices_eighteen 賭局骰子資料表的 gambling_id 的 index, 但這次不設 unique
+    op.create_index(
+        'gambling_dice_unique_id',
+        'gambling_dices_eighteen',
+        ['gambling_id', 'user_id'],
+        unique=False,
+    )
+
     # 新建立一組 index : gambling_id, user_id, dices
     op.create_index(
         'gambling_id_user_id_dices',
@@ -45,6 +58,19 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
+    op.drop_index(
+        'gambling_dice_unique_id',
+        table_name='gambling_dices',
+    )
+
+    # 重新建立 gambling_dices 賭局骰子資料表的 gambling_id 的 index, 這次設 unique
+    op.create_index(
+        'gambling_id',
+        'gambling_dices',
+        ['gambling_id', 'user_id'],
+        unique=True,
+    )
+
     # 刪除 gambling_id, user_id, dices 的 index
     op.drop_index(
         'gambling_id_user_id_dices',
