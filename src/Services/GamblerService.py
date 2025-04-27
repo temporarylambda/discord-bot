@@ -101,3 +101,53 @@ class GamblerService:
             ]
         )
         return result
+
+    def start(self, Gambling: dict) -> dict:
+        """
+        開始賭局
+
+        :param Gambling: 賭局
+        :type Gambling: dict
+        :return: dict
+        :rtype: dict
+        """
+        return self.GamblerRepository.start(Gambling['id'])
+
+    def settle(self, Gambling: dict, User: dict) -> None:
+        """
+        結算賭局結果
+
+        - 標記贏家
+        - 轉帳贏家賭金
+        - 轉帳給贏家
+
+        :param Gambling: 賭局
+        :type Gambling: dict
+        :param User: 贏家
+        :type User: dict
+        :return: dict
+        :rtype: dict
+        """
+
+        # 標記贏家
+        self.GamblerRepository.setWinner(Gambling['id'], User['id'])
+
+        # 取的賭局總金額
+        totalBets = self.GamblerRepository.getTotalBets(Gambling['id'])
+
+        # 轉帳
+        self.TransferService.transfer(
+            FromUser=None, 
+            ToUser=User, 
+            amount=int(totalBets), 
+            fee=0, 
+            reason=f"賭局贏家 - 賭局編號: {Gambling['id']}", 
+            transfer_type=TransferReasonType.BET_WIN,
+            relation_dict=[
+                {
+                    'type': TransferRelationType.GAMBLING,
+                    'id': [Gambling['id']]
+                }
+            ]
+        )
+        return

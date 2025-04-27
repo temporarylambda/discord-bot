@@ -45,6 +45,9 @@ class GamblingDicesView(discord.ui.View):
         # embed 物件
         self.embed              = None
 
+        # 贏家資料
+        self.winner             = None
+
         # 排序方式
         self.sort_order         = sort_order
 
@@ -56,21 +59,22 @@ class GamblingDicesView(discord.ui.View):
 
         # 賭局狀態文字更新
         description  = "操作方式\n"
-        description += "1. 點擊「加入賭局」按鈕來參加賭局，賭金將提前從戶頭中扣除。\n"
-        description += "2. 當主持人確定要開始遊戲時，可以按下「開始遊戲」來開始遊戲。\n"
-        description += "3. 當玩家想在開始前離開遊戲，可以按下「退出賭局」來退出遊戲並得到賭金退回；如果是主持人退出，將退回所有人的賭金並將賭局結束。\n"
-        gamblingStatus = "歡迎參加賭局"
-        if (self.Gambling):
-            if (self.Gambling['status'] == GamblingStatus.IN_PROGRESS.value):
-                description += "1. 開始遊戲後，參與者可以點擊「擲骰」按鈕來擲骰。\n"
-                description += "2. 當所有參與者都擲完骰子後，將會自動進行結算。\n"
-                description += "3. 當遊戲結算後，整個賭局的累計賭金將會發送給贏家。\n"
-                gamblingStatus = "賭局進行中"
-            elif (self.Gambling['status'] == GamblingStatus.FINISHED.value or self.Gambling['status'] == GamblingStatus.CANCELED.value):
-                gamblingStatus = "賭局結束" if (self.Gambling['status'] == GamblingStatus.FINISHED.value) else "賭局取消"
-                description += "1. 遊戲已結束，無法再進行操作。\n"
-                description += "2. 若有任何問題，請聯繫主持人或管理員。\n"
-                self.clear_items()
+        if (self.Gambling and self.Gambling['status'] == GamblingStatus.IN_PROGRESS.value):
+            description += "1. 開始遊戲後，參與者可以點擊「擲骰」按鈕來擲骰。\n"
+            description += "2. 當所有參與者都擲完骰子後，將會自動進行結算。\n"
+            description += "3. 當遊戲結算後，整個賭局的累計賭金將會發送給贏家。\n"
+            gamblingStatus = "賭局進行中"
+        elif (self.Gambling and self.Gambling['status'] == GamblingStatus.FINISHED.value or self.Gambling['status'] == GamblingStatus.CANCELED.value):
+            gamblingStatus = "賭局結束" if (self.Gambling['status'] == GamblingStatus.FINISHED.value) else "賭局取消"
+            description += "1. 遊戲已結束，無法再進行操作。\n"
+            description += "2. 若有任何問題，請聯繫主持人或管理員。\n"
+            self.clear_items()
+        else:
+            description += "1. 點擊「加入賭局」按鈕來參加賭局，賭金將提前從戶頭中扣除。\n"
+            description += "2. 當主持人確定要開始遊戲時，可以按下「開始遊戲」來開始遊戲。\n"
+            description += "3. 當玩家想在開始前離開遊戲，可以按下「退出賭局」來退出遊戲並得到賭金退回；如果是主持人退出，將退回所有人的賭金並將賭局結束。\n"
+            gamblingStatus = "歡迎參加賭局"
+            
 
         self.embed = discord.Embed(title=f"十八仔 - {gamblingStatus}！", description=description, color=discord.Colour.blue())
         if (self.Gambling):
@@ -78,6 +82,10 @@ class GamblingDicesView(discord.ui.View):
             self.embed.add_field(name="賭局狀態", value=f"{gamblingStatus}", inline=True)
         if (self.players):
             self.embed.add_field(name="賭金池", value=f"{len(self.players) * self.amount} 元", inline=True)
+
+        if (self.winner):
+            self.embed.add_field(name="贏家", value=f"<@{self.winner['uuid']}>", inline=True)
+            self.embed.add_field(name="擲出的骰子", value=self.getDicesDisplay(self.dices[self.winner['id']]), inline=True)
 
         try:
             gamblers = []
@@ -185,10 +193,15 @@ class GamblingDicesView(discord.ui.View):
             Button.callback = self.roll_dices
             self.add_item(Button)
 
-            # self.add_item(self.RollDiceButton(view=self)) # TODO
+            # 開始賭局 
+            self.GamblerService.start(Gambling=self.Gambling)  # 更改賭徒狀態
+            self.Gambling = self.GamblingService.start(Gambling=self.Gambling) # 更改賭局狀態
+
+
             # self.add_item(self.SettleButton(view=self)) # TODO
 
-            await interaction.response.edit_message(content="賭局開始！請各位參與者依序擲骰！", view=self)
+            self.updateEmbed()
+            await interaction.response.edit_message(content="賭局開始！請各位參與者依序擲骰！", view=self, embed=self.embed)
         except Exception as e:
             print(f"Error: {e}")
             await interaction.response.send_message(f"發生錯誤：{e}", ephemeral=True)
@@ -280,20 +293,21 @@ class GamblingDicesView(discord.ui.View):
         :type interaction: discord.Interaction
         :return: None
         """
-
-        maxDicer = None
-        for playerId, dices in self.dices.items():
-            diceSum = sum(dices)
-            if maxDicer is None or diceSum > maxDicer[1]:
-                maxDicer = (playerId, diceSum)
-
+        # 計算贏家
         result = self.GamblingDiceService.ranking(Gambling=self.Gambling, sort_order=self.sort_order, limit=1)
         player = self.players[result[0]['user_id']]
         dices  = self.dices[result[0]['user_id']]
 
+        self.winner = player
         diceEmojis = self.getDicesDisplay(dices)
-        await interaction.message.edit(view=None)
-        await interaction.channel.send(content=f"遊戲結束！\n\n贏家是 <@{player['uuid']}>！\n擲出的骰子為 {diceEmojis}，總和為 {sum(dices)}！")
+
+        # 發送獎金
+        self.GamblerService.settle(Gambling=self.Gambling, User=player)
+        self.Gambling = self.GamblingService.finish(Gambling=self.Gambling)
+        self.updateEmbed()
+
+        await interaction.message.edit(embed=self.embed, view=None)
+        await interaction.followup.send(content=f"遊戲結束！\n\n贏家是 <@{player['uuid']}>！\n擲出的骰子為 {diceEmojis}，總和為 {sum(dices)}！\n\n恭喜獲得總賭金 {len(self.players) * self.amount} 元！\n\n-# 若有任何問題，請聯繫主持人或管理員！")
 
     # 取得骰子輸出結果
     def getDicesDisplay(self: discord.ui.View, dices: list) -> list:

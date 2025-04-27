@@ -118,3 +118,67 @@ class GamblerRepository:
         )
         connection.commit()
         return self.get(gambling_id, user_id)
+
+    def start(self, gambling_id) -> None:
+        """
+        開始賭局
+
+        :param gambling_id: 賭局 id
+        :return: dict
+        """
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp()
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        cursor.execute("UPDATE gamblers SET status = %s, updated_at = %s WHERE gambling_id = %s AND status = %s",
+            (
+                GamblerStatus.IN_PROGRESS.value,
+                currentTimestamp, 
+                gambling_id, 
+                GamblerStatus.PENDING.value,
+            )
+        )
+        connection.commit()
+        return
+
+    def setWinner(self, gambling_id, user_id) -> dict:
+        """
+        設定使用者為贏家
+
+        :param gambling_id: 賭局 id
+        :param user_id: 使用者 id
+        :return: dict
+        """
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp()
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+
+        # 先將所有非指定贏家的參加者狀態設為輸家, 並把贏家標記成贏家
+        cursor.execute(
+            "UPDATE gamblers SET status = IF(user_id = %s, %s, %s), updated_at = %s WHERE gambling_id = %s AND status = %s",
+            (
+                user_id,
+                GamblerStatus.WINNER.value,
+                GamblerStatus.LOSER.value,
+                currentTimestamp, 
+                gambling_id, 
+                GamblerStatus.IN_PROGRESS.value,
+            )
+        )
+        connection.commit()
+        return self.get(gambling_id, user_id)
+    
+    def getTotalBets(self, gambling_id) -> int:
+        """
+        取得賭局中所有參加者的總賭注金額
+
+        :param gambling_id: 賭局 id
+        :return: int
+        """
+        connection = DatabaseConnection.connect()
+        cursor = DatabaseConnection.cursor(connection)
+        cursor.execute(
+            "SELECT SUM(total_bets) as totalBets FROM gamblers WHERE gambling_id = %s AND status NOT IN (%s, %s)", 
+            (gambling_id, GamblerStatus.CANCELED.value, GamblerStatus.PENDING.value)
+        )
+        result = cursor.fetchone()
+        return int(result['totalBets']) if result is not None else 0
