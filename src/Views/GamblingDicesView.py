@@ -47,9 +47,6 @@ class GamblingDicesView(discord.ui.View):
         # embed 物件
         self.embed              = None
 
-        # 更新第一次的 embed
-        self.updateEmbed()
-
     # 更新賭局資訊
     def updateEmbed(self: discord.ui.View) -> None:
         """
