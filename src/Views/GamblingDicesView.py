@@ -77,15 +77,17 @@ class GamblingDicesView(discord.ui.View):
             
 
         self.embed = discord.Embed(title=f"十八仔 - {gamblingStatus}！", description=description, color=discord.Colour.blue())
+        self.embed.add_field(name="賭局主持人", value=f"<@{self.Host['uuid']}>", inline=True)
         if (self.Gambling):
-            self.embed.add_field(name="賭局編號", value=f"{self.Gambling['id']}", inline=True)
             self.embed.add_field(name="賭局狀態", value=f"{gamblingStatus}", inline=True)
+            self.embed.add_field(name="賭局編號", value=f"{self.Gambling['id']}", inline=True)
+        self.embed.add_field(name="賭局模式", value="點數最大者贏" if self.sort_order == "DESC" else "點數最小者贏" , inline=False)
+
         if (self.players):
-            self.embed.add_field(name="賭金池", value=f"{len(self.players) * self.amount} 元", inline=True)
+            self.embed.add_field(name="賭金池", value=f"{len(self.players) * self.amount} 元", inline=False)
 
         if (self.winner):
-            self.embed.add_field(name="贏家", value=f"<@{self.winner['uuid']}>", inline=True)
-            self.embed.add_field(name="擲出的骰子", value=self.getDicesDisplay(self.dices[self.winner['id']]), inline=True)
+            self.embed.add_field(name="贏家", value=f"<@{self.winner['uuid']}> - " + self.getDicesDisplay(self.dices[self.winner['id']]), inline=False)
 
         try:
             gamblers = []
