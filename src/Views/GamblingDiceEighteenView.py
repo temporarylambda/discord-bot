@@ -8,7 +8,7 @@ from Services.GamblerService import GamblerService
 from Enums.GamblingType import GamblingType
 from Enums.GamblingStatus import GamblingStatus
 
-class GamblingDicesView(discord.ui.View):
+class GamblingDiceEighteenView(discord.ui.View):
     def __init__(self, bot, Host: dict, amount: int, diceEmojis: dict = None, sort_order: str = "DESC") -> None:
         super().__init__(timeout=None)
         self.UserService = UserService();

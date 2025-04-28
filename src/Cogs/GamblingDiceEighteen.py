@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from Services.RoleService import RoleService
 from Services.UserService import UserService
-from Views.GamblingDicesView import GamblingDicesView
+from Views.GamblingDiceEighteenView import GamblingDiceEighteenView
 
 class GamblingDiceEighteen(commands.GroupCog, name="十八仔"):
     def __init__(self, bot):
@@ -27,7 +27,7 @@ class GamblingDiceEighteen(commands.GroupCog, name="十八仔"):
             diceEmojis[i] = discord.utils.get(interaction.guild.emojis, name=f"emoji_dice_{i}")
 
         User = self.UserService.firstOrCreate(interaction.user)
-        View = GamblingDicesView(self.bot, Host=User, amount=amount, diceEmojis=diceEmojis, sort_order=rule)
+        View = GamblingDiceEighteenView(self.bot, Host=User, amount=amount, diceEmojis=diceEmojis, sort_order=rule)
         await View.sendInvite(interaction)
 
 async def setup(bot):
