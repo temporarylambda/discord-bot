@@ -55,8 +55,8 @@ class TransferService:
                 DailyCheckInTopicRepositoryObject.skip(daily_check_in_topic_id)
 
         self.transfer(
-            FromUser={'id': Inventory['merchant_id']},
-            ToUser=None,
+            FromUser=None,
+            ToUser={'id': Inventory['merchant_id']},
             amount=amount,
             fee=int(amount * float(os.getenv("RULE_MERCHANDISE_TRADE_FEE", 0.2))),
             reason=f"{User['name']} 兌換商品 ID: {Inventory['merchandise_id']}, {Inventory['name']} (by {to_user_name}) 1 個，原價 {Inventory['price']} 元，手續費 {fee} 元，實際兌換金額 {amount} 元",
