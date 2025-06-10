@@ -129,11 +129,9 @@ class CheckIn(commands.GroupCog):
     async def tasks_report(self, interaction: discord.Interaction):
         # 客製化 Dropdown 下拉選單取得資料
         async def getDataset(self, interaction: discord.Interaction):
-            dropdown = None
-
             TopicServiceObject = TopicService()
             options = TopicServiceObject.getCurrentTopicsDropdownOptions(self.User['id'])
-            content = "您好！\n這是您目前的簽到題目！\n請選擇題目並按下「確認回報」來進行回報！" if dropdown is not None else "您目前沒有任何簽到任務！"
+            content = "您好！\n這是您目前的簽到題目！\n請選擇題目並按下「確認回報」來進行回報！" if len(options) > 0 else "您目前沒有任何簽到任務！"
             return {
                 'content': content,
                 'dropdown': DropdownView.generateDropdown(
