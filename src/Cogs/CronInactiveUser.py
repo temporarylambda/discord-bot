@@ -18,13 +18,15 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
         self.executeDays = os.getenv("RULE_INACTIVE_CHECKIN_DAYS", 30)
         self.warningDays = os.getenv("RULE_INACTIVE_WARNING_DAYS", 23)
         
-    # 列出連續未簽到的用戶
-    @app_commands.command(name="列表", description=f"列出連續 {executeDays} 天未曾簽到的用戶")
+
+    # 同步目前尚未建立資料庫資料的群組成員
+    @app_commands.command(name="同步", description="同步目前所有已加入群組但因為未曾操作過機器人所以在資料庫尚未有資料的群組成員")
     @RoleService.checkBanned(False)
     @RoleService.checkManager(True)
-    async def list(self, interaction: discord.Interaction):
+    async def sync(self, interaction: discord.Interaction):
+        await interaction.response.send_message("開始同步所有成員資料！")
         UserServiceObject = UserService()
-        User = UserServiceObject.firstOrCreate(interaction.user)
+        UserServiceObject.firstOrCreate(interaction.user)
 
         guild = interaction.guild
         # 確保已經有完整的 member list（必要時強制抓取）
@@ -37,6 +39,17 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
         # 為所有成員創建或更新 User
         for member in members:
             UserServiceObject.firstOrCreate(member)
+        
+        await interaction.channel.send("已同步所有成員資料！")
+
+
+    # 列出連續未簽到的用戶
+    @app_commands.command(name="列表", description=f"列出連續 {executeDays} 天未曾簽到的用戶")
+    @RoleService.checkBanned(False)
+    @RoleService.checkManager(True)
+    async def list(self, interaction: discord.Interaction):
+        UserServiceObject = UserService()
+        UserServiceObject.firstOrCreate(interaction.user)
         
         # 開始取得列表
         L = 10    # elements per page
