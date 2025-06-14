@@ -17,6 +17,9 @@ class UserService:
     def findById(self, id):
         return self.UserRepository.findById(id);
 
+    def getInactivePaginates(self, days=30, page: int = 1, page_size: int = 10):
+        return self.UserRepository.getInactivePaginates(days=days, page=page, page_size=page_size);
+
     @staticmethod
     def resetDailyCheckIn():
         return UserRepository.resetDailyCheckIn();

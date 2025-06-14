@@ -1,5 +1,7 @@
 from Services.DatabaseConnection import DatabaseConnection
-from datetime import timedelta
+from datetime import timedelta, datetime
+from zoneinfo import ZoneInfo
+
 class UserRepository:
     # 以 discord uuid 進行查詢, 如果沒有資料則建立一筆新的資料
     def findByUUID(self, uuid, name=None):
@@ -105,3 +107,81 @@ class UserRepository:
             (currentTimestamp, yesterday, currentTimestamp)
         );
         connection.commit();
+
+    def getInactive(self, days=30):
+        """
+        getInactive 取得不活躍使用者的資料
+
+        :param days: 不活躍的天數，預設為 30 天
+        :return: 不活躍使用者的資料列表
+        例如：
+        [
+            {'id': 1, 'name': 'User1', ...},
+            {'id': 2, 'name': 'User2', ...},
+            ...
+        ]
+        """
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+
+        # 取得檢查開始日日期
+        currentDatetimeObject = DatabaseConnection.getCurrentDateTimeObject()
+        startAt   = (currentDatetimeObject - timedelta(days=days)).strftime('%Y-%m-%d 00:00:00')
+        statement  = "SELECT * FROM users WHERE latest_checkin_at IS NULL OR latest_checkin_at <= %s "
+        statement += "ORDER BY latest_checkin_at DESC"
+        parameters = (startAt)
+        
+        cursor.execute(statement, parameters);
+        result = cursor.fetchall();
+        return result
+
+    def getInactivePaginates(self, days=30, page: int = 1, page_size: int = 10):
+        """
+        getInactivePaginates 取得不活躍使用者的分頁資料
+
+        :param days: 不活躍的天數，預設為 30 天
+        :param page: 分頁頁碼，預設為 1
+        :param page_size: 每頁顯示的資料數量，預設為 10
+        :return: 包含總數量、當前頁碼、每頁大小和結果的字典
+        例如：
+        {
+            'total_count': 100,
+            'page': 1,
+            'page_size': 10,
+            'result': [
+                {'id': 1, 'name': 'User1', ...},
+                {'id': 2, 'name': 'User2', ...},
+                ...
+            ]
+        }
+        """
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+
+        # 取得檢查開始日日期
+        currentDatetimeObject = DatabaseConnection.getCurrentDateTimeObject()
+        startAt   = (currentDatetimeObject - timedelta(days=days)).strftime('%Y-%m-%d 00:00:00')
+
+        startFrom = (page - 1) * page_size
+        statement = """
+            SELECT 
+                SQL_CALC_FOUND_ROWS *
+            FROM users
+            WHERE 
+                latest_checkin_at IS NULL OR latest_checkin_at <= %s
+        """
+        statement += "ORDER BY latest_checkin_at DESC LIMIT %s OFFSET %s"
+        parameters = (startAt, page_size, startFrom)
+        cursor.execute(statement, parameters);
+        result = cursor.fetchall();
+
+        # 計算總頁數
+        cursor.execute("SELECT FOUND_ROWS() as total_count");
+        total_count = cursor.fetchone()['total_count'];
+
+        return {
+            'total_count': total_count,
+            'page': page,
+            'page_size': page_size,
+            'result': result
+        }
