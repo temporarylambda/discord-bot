@@ -126,7 +126,7 @@ class UserRepository:
 
         # 取得檢查開始日日期
         currentDatetimeObject = DatabaseConnection.getCurrentDateTimeObject()
-        startAt   = (currentDatetimeObject - timedelta(days=days)).strftime('%Y-%m-%d 00:00:00')
+        startAt   = (currentDatetimeObject - timedelta(days=int(days))).strftime('%Y-%m-%d 00:00:00')
         statement  = "SELECT * FROM users WHERE latest_checkin_at IS NULL OR latest_checkin_at <= %s "
         statement += "ORDER BY latest_checkin_at DESC"
         parameters = (startAt)
@@ -160,7 +160,7 @@ class UserRepository:
 
         # 取得檢查開始日日期
         currentDatetimeObject = DatabaseConnection.getCurrentDateTimeObject()
-        startAt   = (currentDatetimeObject - timedelta(days=days)).strftime('%Y-%m-%d 00:00:00')
+        startAt   = (currentDatetimeObject - timedelta(days=int(days))).strftime('%Y-%m-%d 00:00:00')
 
         startFrom = (page - 1) * page_size
         statement = """
