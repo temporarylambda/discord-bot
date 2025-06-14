@@ -81,7 +81,7 @@ class Inventory(commands.GroupCog):
             embed.add_field(name="商品價格", value=f"{Inventory['price']} 元", inline=False)
             if Inventory['uuid'] is not None:
                 embed.add_field(name="商品擁有者", value=f"<@{Inventory['uuid']}>", inline=False)
-            embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+            embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
             return embed
         
         # 刷新任務卷兌換邏輯 - 提供 Select 選單讓使用者選擇要刷新的任務

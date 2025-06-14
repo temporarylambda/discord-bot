@@ -42,7 +42,7 @@ class Manager(commands.GroupCog):
         embed.add_field(name="發放金額", value=f"{amount} 元", inline=False)
         if note is not None:
             embed.add_field(name="備註", value=note, inline=False)
-        embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
         embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
 
         # 取得發放金額後的最新狀態
@@ -79,7 +79,7 @@ class Manager(commands.GroupCog):
         embed.add_field(name="扣除金額", value=f"{amount} 元", inline=False)
         if note is not None:
             embed.add_field(name="備註", value=note, inline=False)
-        embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
         embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
 
         # 取得發放金額後的最新狀態
@@ -118,7 +118,7 @@ class Manager(commands.GroupCog):
 
                 print(f"上架任務 - {interaction.user.name} - {description} - {reward} - {note}")
                 embed = discord.Embed(title="任務上架成功", description="", color=Colour.gold())
-                embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+                embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
                 embed.description = f"# 任務快訊\n\n"
                 embed.description += f"{interaction.user.mention} 上架了一則新簽到任務！\n"
                 embed.description += f"-# 究竟誰會是第一位受害者呢？\n\n"
@@ -154,7 +154,7 @@ class Manager(commands.GroupCog):
                     note = "無" if topic['note'] is None else topic['note']
                     emb.description += f"{topic['id']}. {topic['description']}\n"
                     emb.description += f"-# 獎勵: {reward} | 備註： {note}\n\n"
-            emb.set_author(name=f"{interaction.user.display_name}", icon_url=interaction.user.avatar.url)
+            emb.set_author(name=f"{interaction.user.display_name}", icon_url=interaction.user.display_avatar.url)
             emb.set_footer(text=f"Page {page} from {n}")
             return emb, n
 
@@ -190,7 +190,7 @@ class Manager(commands.GroupCog):
                 embed.add_field(name="任務內容", value=f"{Topic['description']}", inline=False)
                 embed.add_field(name="任務獎勵", value=f"{Topic['reward']} 元" if Topic['reward'] is not None else "無", inline=False)
                 embed.add_field(name="任務備注", value=Topic['note'] if Topic['note'] is not None else "無", inline=False)
-                embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+                embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
                 embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
                 await interaction.followup.send(embed=embed)
                 return
@@ -213,7 +213,7 @@ class Manager(commands.GroupCog):
         embed.add_field(name="任務內容", value=f"{Topic['description']}", inline=False)
         embed.add_field(name="任務獎勵", value=f"{Topic['reward']} 元" if Topic['reward'] is not None else "無", inline=False)
         embed.add_field(name="任務備注", value=Topic['note'] if not None else "無", inline=False)
-        embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
 
         View = discord.ui.View(timeout=None)
         View.add_item(ConfirmButton(label="確認下架", style=discord.ButtonStyle.red, disabled=False, row=1, topic_id=topic_id))
@@ -254,7 +254,7 @@ class Manager(commands.GroupCog):
                 embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
                 embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
                 embed.add_field(name="下架備註", value=self.note if self.note is not None else "無", inline=False)
-                embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+                embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
                 embed.set_footer(text=f"由 {interaction.user.display_name} 操作")
                 await interaction.followup.send(embed=embed)
 
@@ -294,7 +294,7 @@ class Manager(commands.GroupCog):
         embed.add_field(name="商品描述", value=Merchandise['description'] if Merchandise['description'] is not None else "無", inline=False)
         embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
         embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
-        embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
 
         View = discord.ui.View(timeout=None)
         View.add_item(ConfirmButton(label="確認下架", style=discord.ButtonStyle.red, disabled=False, row=1, merchandise_id=merchandise_id, note=note))

@@ -243,7 +243,7 @@ class Shop(commands.GroupCog):
         embed.add_field(name="商品描述", value=Merchandise['description'] if Merchandise['description'] is not None else "無", inline=False)
         embed.add_field(name="商品價格", value=f"{Merchandise['price']} 元", inline=False)
         embed.add_field(name="商品擁有者", value=f"<@{Merchandise['uuid']}>" if Merchandise['uuid'] is not None else "系統", inline=False)
-        embed.set_author(name=interaction.user.name, icon_url=interaction.user.avatar.url)
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
 
         View = discord.ui.View(timeout=None)
         View.add_item(ConfirmButton(label="確認下架", style=discord.ButtonStyle.red, disabled=False, row=1, merchandise_id=merchandise_id))
