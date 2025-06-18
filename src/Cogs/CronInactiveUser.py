@@ -91,6 +91,7 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
         page = 1
 
         description = "# 以下是目前的不活躍成員清單：\n\n"
+        index = 1
         await interaction.response.send_message(content="# 以下是目前的不活躍成員清單：\n\n")
         while True:
             result = UserServiceObject.getInactivePaginates(days=self.executeDays, page=page, page_size=pageSize)
@@ -100,13 +101,15 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
                 break
 
             for user in result['result']:
-                description += f"**{user['id']}.** {user['name']} **<@{user['uuid']}>**\n"
+                description += f"**{index}.** {user['name']} (id: {user['id']}) **<@{user['uuid']}>**\n"
                 description += f"> 最後回報簽到任務時間：";
                 description += "從未" if user['latest_checkin_at'] is None else user['latest_checkin_at'].strftime("%Y-%m-%d %H:%M:%S")
                 description += "\n"
                 description += f"> 最後訊息回覆時間：";
                 description += "從未" if user['latest_message_at'] is None else user['latest_message_at'].strftime("%Y-%m-%d %H:%M:%S")
                 description += "\n\n"
+
+                index += 1
 
             page += 1
             await interaction.followup.send(content=description)
