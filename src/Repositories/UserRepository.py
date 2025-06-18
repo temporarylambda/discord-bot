@@ -15,9 +15,13 @@ class UserRepository:
         result = cursor.fetchone();
 
         # 如果有使用者資料，且名稱不為空，而且資料庫中的名稱與傳入的名稱不相同，則更新名稱
-        if result is not None and name is not None and result['name'] != name:
-            statement = f"UPDATE users SET name = %s, updated_at = %s WHERE uuid = %s AND name != %s";
-            cursor.execute(statement, (name, currentTimestamp, uuid, name));
+        if result is not None and ((name is not None and result['name'] != name) or result['deleted_at'] is not None):
+            updateData = {'deleted_at': None, 'updated_at': currentTimestamp}
+            if name is not None and result['name'] != name:
+                updateData['name'] = name
+
+            statement, values = DatabaseConnection.createUpdateStatement(table='users', data=updateData, condition={'uuid': uuid},);
+            cursor.execute(statement, values);
             connection.commit();
         
         return result;
@@ -40,7 +44,7 @@ class UserRepository:
         cursor.execute(statement, (uuid, name, balance, consecutive_checkin_days, currentTimestamp, currentTimestamp));
         connection.commit();
 
-        return self.findByUUID(uuid);
+        return self.findByUUID(uuid, name);
 
     # 簽到用，更新資料
     def checkIn(self, user_id):
@@ -127,9 +131,15 @@ class UserRepository:
         # 取得檢查開始日日期
         currentDatetimeObject = DatabaseConnection.getCurrentDateTimeObject()
         startAt   = (currentDatetimeObject - timedelta(days=int(days))).strftime('%Y-%m-%d 00:00:00')
-        statement  = "SELECT * FROM users WHERE latest_checkin_at IS NULL OR latest_checkin_at <= %s "
-        statement += "ORDER BY latest_checkin_at DESC"
-        parameters = (startAt)
+        statement  = """
+            SELECT * FROM users 
+            WHERE 
+                (latest_checkin_at IS NULL OR latest_checkin_at <= %s) AND 
+                (latest_message_at IS NULL OR latest_message_at <= %s) AND 
+                deleted_at IS NULL
+            ORDER BY latest_checkin_at DESC
+        """
+        parameters = (startAt, startAt)
         
         cursor.execute(statement, parameters);
         result = cursor.fetchall();
@@ -168,10 +178,12 @@ class UserRepository:
                 SQL_CALC_FOUND_ROWS *
             FROM users
             WHERE 
-                latest_checkin_at IS NULL OR latest_checkin_at <= %s
+                (latest_checkin_at IS NULL OR latest_checkin_at <= %s) AND 
+                (latest_message_at IS NULL OR latest_message_at <= %s) AND 
+                deleted_at IS NULL
+            ORDER BY latest_checkin_at DESC, latest_message_at DESC, id ASC LIMIT %s OFFSET %s
         """
-        statement += "ORDER BY latest_checkin_at DESC LIMIT %s OFFSET %s"
-        parameters = (startAt, page_size, startFrom)
+        parameters = (startAt, startAt, page_size, startFrom)
         cursor.execute(statement, parameters);
         result = cursor.fetchall();
 
@@ -185,3 +197,92 @@ class UserRepository:
             'page_size': page_size,
             'result': result
         }
+
+    def getAllMemberPaginates(self, page: int = 1, page_size: int = 10):
+        """
+        getAllMemberPaginates 取得所有使用者的分頁資料
+
+        :param page: 分頁頁碼，預設為 1
+        :param page_size: 每頁顯示的資料數量，預設為 10
+        :return: 包含總數量、當前頁碼、每頁大小和結果的字典
+        例如：
+        {
+            'total_count': 100,
+            'page': 1,
+            'page_size': 10,
+            'result': [
+                {'id': 1, 'name': 'User1', ...},
+                {'id': 2, 'name': 'User2', ...},
+                ...
+            ]
+        }
+        """
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+
+        startFrom = (page - 1) * page_size
+        statement = """
+            SELECT 
+                SQL_CALC_FOUND_ROWS *
+            FROM users
+            WHERE deleted_at IS NULL
+            LIMIT %s OFFSET %s
+        """
+        parameters = (page_size, startFrom)
+        cursor.execute(statement, parameters);
+        result = cursor.fetchall();
+
+        # 計算總頁數
+        cursor.execute("SELECT FOUND_ROWS() as total_count");
+        total_count = cursor.fetchone()['total_count'];
+
+        return {
+            'total_count': total_count,
+            'page': page,
+            'page_size': page_size,
+            'result': result
+        }
+
+    def undelete(self, uuid):
+        """
+        undelete 還原使用者資料 (SOFT UNDELETE)
+
+        :param uuid: 使用者的 UUID
+        :return: None
+        """
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp();
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+        statement = "UPDATE users SET deleted_at = NULL, updated_at = %s WHERE uuid = %s";
+        cursor.execute(statement, (currentTimestamp, uuid,));
+        connection.commit();
+        return
+
+    def delete(self, uuid):
+        """
+        delete 刪除使用者資 (SOFT DELETE)
+
+        :param uuid: 使用者的 UUID
+        :return: None
+        """
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp();
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+        statement = "UPDATE users SET deleted_at = %s WHERE uuid = %s";
+        cursor.execute(statement, (currentTimestamp, uuid,));
+        connection.commit();
+        return
+
+    def updateLastMessageAt(self, user: dict):
+        """
+        updateLastMessageAt 更新使用者的最後訊息時間
+
+        :param user: 使用者物件
+        :return: None
+        """
+        currentTimestamp = DatabaseConnection.getCurrentTimestamp();
+        connection = DatabaseConnection.connect();
+        cursor = DatabaseConnection.cursor(connection);
+        statement = "UPDATE users SET latest_message_at = %s, updated_at = %s WHERE id = %s";
+        cursor.execute(statement, (currentTimestamp, currentTimestamp, user['id'],));
+        connection.commit();

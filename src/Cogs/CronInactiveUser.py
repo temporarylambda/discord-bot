@@ -18,13 +18,26 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
         self.executeDays = os.getenv("RULE_INACTIVE_CHECKIN_DAYS", 30)
         self.warningDays = os.getenv("RULE_INACTIVE_WARNING_DAYS", 23)
         
+        # TODO: 啟動每日檢查任務
+        # self.resetDailyCheckIn.start()
+
+    def cog_unload(self):
+        # self.resetDailyCheckIn.stop()
+        pass
+
+    # # 每天 00:00 進行每日檢查
+    # @tasks.loop(time=midnightTime)
+    # async def resetDailyCheckIn(self):
+    #     today = datetime.now(ZoneInfo("Asia/Taipei")).date()
+    #     print(f" |---- {today} - 開始檢查不活躍用戶...")
 
     # 同步目前尚未建立資料庫資料的群組成員
-    @app_commands.command(name="同步", description="同步目前所有已加入群組但因為未曾操作過機器人所以在資料庫尚未有資料的群組成員")
+    @app_commands.command(name="同步", description="同步伺服器與資料庫中的成員名單")
     @RoleService.checkBanned(False)
     @RoleService.checkManager(True)
     async def sync(self, interaction: discord.Interaction):
-        await interaction.response.send_message("開始同步所有成員資料！")
+        await interaction.response.defer()
+        await interaction.followup.send("同步開始 - 更新已經加入伺服器但尚未操作過機器人的名單⋯⋯")
         UserServiceObject = UserService()
         UserServiceObject.firstOrCreate(interaction.user)
 
@@ -39,8 +52,30 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
         # 為所有成員創建或更新 User
         for member in members:
             UserServiceObject.firstOrCreate(member)
+        await interaction.followup.send("更新完成。")
+
+        await interaction.followup.send("同步開始 - 將已退出群組的資料庫名單進行刪除⋯⋯")
         
-        await interaction.channel.send("已同步所有成員資料！")
+        isMoreUser = True
+        page = 1
+        while isMoreUser:
+            Result = UserServiceObject.getAllMemberPaginates(page, 50)
+            if Result['result'] is None or len(Result['result']) == 0:
+                isMoreUser = False
+                continue
+
+            for user in Result['result']:
+                # 如果使用者不在伺服器中，則刪除資料庫中的使用者
+                print(f"檢查使用者 {user['name']} <@{user['uuid']}> 是否在伺服器中...")
+                try:
+                    await guild.fetch_member(user['uuid'])
+                except discord.NotFound:
+                    UserServiceObject.delete(user['uuid'])
+                    await interaction.followup.send(f"使用者 {user['name']} <@{user['uuid']}> 已經不在伺服器中，已從資料庫刪除。")
+            
+            page += 1
+        
+        await interaction.followup.send("更新完成。")
 
 
     # 列出連續未簽到的用戶
@@ -52,28 +87,29 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
         UserServiceObject.firstOrCreate(interaction.user)
         
         # 開始取得列表
-        L = 10    # elements per page
-        async def get_page(view:discord.ui.View, page: int):
-            result = UserServiceObject.getInactivePaginates(days=self.executeDays, page=page, page_size=L)
+        pageSize = 10
+        page = 1
 
-            n = PaginationView.compute_total_pages(result['total_count'], L)
-            emb = discord.Embed(title="不活躍成員清單", description=f"{interaction.user.mention} 您好！")
+        description = "# 以下是目前的不活躍成員清單：\n\n"
+        await interaction.response.send_message(content="# 以下是目前的不活躍成員清單：\n\n")
+        while True:
+            result = UserServiceObject.getInactivePaginates(days=self.executeDays, page=page, page_size=pageSize)
+            if (result['result'] is None or len(result['result']) == 0):
+                if (page == 1):
+                    description += "### 目前沒有任何不活躍成員成員！\n\n"
+                break
 
-            emb.description += f"這是目前的不活躍成員清單！\n\n"
-            if (len(result['result']) == 0):
-                emb.description += "# 目前沒有任何不活躍成員成員！\n\n"
-            else:
-                for user in result['result']:
-                    emb.description += f"**{user['id']}.** **<@{user['uuid']}>**\n"
-                    emb.description += f"> 最後回報簽到任務時間：";
-                    emb.description += "從未" if user['latest_checkin_at'] is None else user['latest_checkin_at'].strftime("%Y-%m-%d %H:%M:%S")
-                    emb.description += "\n\n"
+            for user in result['result']:
+                description += f"**{user['id']}.** {user['name']} **<@{user['uuid']}>**\n"
+                description += f"> 最後回報簽到任務時間：";
+                description += "從未" if user['latest_checkin_at'] is None else user['latest_checkin_at'].strftime("%Y-%m-%d %H:%M:%S")
+                description += "\n"
+                description += f"> 最後訊息回覆時間：";
+                description += "從未" if user['latest_message_at'] is None else user['latest_message_at'].strftime("%Y-%m-%d %H:%M:%S")
+                description += "\n\n"
 
-            emb.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
-            emb.set_footer(text=f"Page {page} from {n}")
-            return emb, n
-
-        await PaginationView(interaction, get_page).navigate()
+            page += 1
+            await interaction.followup.send(content=description)
 
     @commands.Cog.listener()
     async def on_ready(self):

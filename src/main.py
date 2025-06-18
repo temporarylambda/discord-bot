@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 from zoneinfo import ZoneInfo
 from Exceptions.RoleException import RoleException
+from Services.UserService import UserService
 import asyncio
 
 # 宣告機器人
@@ -41,6 +42,30 @@ async def on_ready():
     print(f"  https://discord.com/oauth2/authorize?client_id={bot.user.id}&scope=bot&permissions=8")
     print(f"\n")
     print('=========================初始化完成=========================')
+
+@bot.event
+async def on_member_join(member: discord.Member):
+    print(f"{member} 加入了伺服器 {member.guild.name}")
+    UserServiceObject = UserService()
+    UserServiceObject.firstOrCreate(member) # 建立資料庫紀錄
+
+@bot.event
+async def on_member_remove(member: discord.Member):
+    print(f"{member} 離開了伺服器 {member.guild.name}")
+    UserServiceObject = UserService()
+    UserServiceObject.delete(member.id) # 刪除資料庫紀錄
+
+@bot.event
+async def on_message(message: discord.Message):
+    if message.author.bot or message.guild is None:
+        return
+
+    UserServiceObject = UserService()
+    User = UserServiceObject.firstOrCreate(message.author) # 建立資料庫紀錄
+
+    if User is not None:
+        UserServiceObject.updateLastMessageAt(User)
+
 
 async def load_cogs():
     # 載入所有的 cogs
