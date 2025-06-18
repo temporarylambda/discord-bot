@@ -110,6 +110,7 @@ class CronInactiveUser(commands.GroupCog, name="不活躍用戶"):
 
             page += 1
             await interaction.followup.send(content=description)
+            description = "" # 清空描述以便下一頁使用
 
     @commands.Cog.listener()
     async def on_ready(self):
