@@ -23,7 +23,7 @@ class MerchandiseRepository:
                 users.uuid 
             FROM merchandises 
             LEFT JOIN users ON users.id = merchandises.user_id 
-            WHERE deleted_at IS NULL 
+            WHERE merchandises.deleted_at IS NULL 
         """
         if (user_id is not None):
             statement += "AND merchandises.user_id = %s "
@@ -47,7 +47,7 @@ class MerchandiseRepository:
                 users.uuid 
             FROM merchandises 
             LEFT JOIN users ON users.id = merchandises.user_id 
-            WHERE deleted_at IS NULL 
+            WHERE merchandises.deleted_at IS NULL 
         """
         if (user_id is not None):
             statement += "AND merchandises.user_id = %s "
